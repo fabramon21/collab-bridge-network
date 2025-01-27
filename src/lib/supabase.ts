@@ -1,12 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
-// @ts-ignore - Supabase secrets are injected at runtime
-const supabaseUrl = window.env?.SUPABASE_URL;
-// @ts-ignore - Supabase secrets are injected at runtime
-const supabaseKey = window.env?.SUPABASE_ANON_KEY;
+const supabaseUrl = 'https://iqfbvgvvwxjvwqtlxvqm.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxZmJ2Z3Z2d3hqdndxdGx4dnFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDc4MjI5NzcsImV4cCI6MjAyMzM5ODk3N30.0I8dMKUMjhzTZQDVuqFOXDxP5Yw1RxHDfZHDVGkGQ8Y';
 
-if (!supabaseUrl || !supabaseKey) {
+if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase configuration. Please make sure you have set up your Supabase project correctly.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
