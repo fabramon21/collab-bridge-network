@@ -1,10 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// @ts-ignore - Supabase secrets are injected at runtime
+const supabaseUrl = window.env?.SUPABASE_URL;
+// @ts-ignore - Supabase secrets are injected at runtime
+const supabaseKey = window.env?.SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing Supabase environment variables');
+  throw new Error('Missing Supabase configuration. Please make sure you have set up your Supabase project correctly.');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
