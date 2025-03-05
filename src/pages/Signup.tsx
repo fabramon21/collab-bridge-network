@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -19,6 +20,9 @@ import * as z from "zod";
 const signupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Must be a valid .edu email").endsWith(".edu", "Must be a .edu email"),
+  school: z.string().min(2, "Please enter your school name"),
+  linkedin: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  address: z.string().min(5, "Please enter your full address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
@@ -34,6 +38,9 @@ const Signup = () => {
     defaultValues: {
       name: "",
       email: "",
+      school: "",
+      linkedin: "",
+      address: "",
       password: "",
     },
   });
@@ -49,6 +56,9 @@ const Signup = () => {
         options: {
           data: {
             full_name: values.name,
+            school: values.school,
+            linkedin: values.linkedin,
+            address: values.address,
           },
         },
       });
@@ -68,6 +78,9 @@ const Signup = () => {
             id: data.user?.id,
             full_name: values.name,
             email: values.email,
+            school: values.school,
+            linkedin: values.linkedin,
+            address: values.address,
           }
         ]);
 
@@ -119,6 +132,48 @@ const Signup = () => {
                     <FormLabel>Email address (.edu)</FormLabel>
                     <FormControl>
                       <Input type="email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="school"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>School</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="linkedin"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>LinkedIn Profile (optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://linkedin.com/in/username" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Address</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

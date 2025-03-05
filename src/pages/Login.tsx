@@ -1,16 +1,68 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+
+const loginSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+type LoginValues = z.infer<typeof loginSchema>;
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: Implement login logic
-    console.log("Login attempt with:", { email, password });
+  const form = useForm<LoginValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const onSubmit = async (values: LoginValues) => {
+    try {
+      setIsLoading(true);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Successfully signed in!",
+        description: "Welcome back to InternConnect",
+      });
+
+      navigate("/");
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to sign in. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -23,47 +75,41 @@ const Login = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <div className="mt-1">
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-            </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email address</FormLabel>
+                    <FormControl>
+                      <Input type="email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1">
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-            </div>
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <div>
-              <Button type="submit" className="w-full">
-                Sign in
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Signing in..." : "Sign in"}
               </Button>
-            </div>
-          </form>
+            </form>
+          </Form>
 
           <div className="mt-6">
             <div className="relative">

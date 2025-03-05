@@ -1,8 +1,12 @@
+
 -- Create profiles table
 create table profiles (
   id uuid references auth.users on delete cascade not null primary key,
   full_name text,
   email text,
+  school text,
+  linkedin text,
+  address text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -25,6 +29,7 @@ create policy "Users can update their own profile."
 
 -- Create indexes
 create index profiles_email_idx on profiles (email);
+create index profiles_school_idx on profiles (school);
 
 -- Set up Row Level Security (RLS)
 alter table profiles enable row level security;
