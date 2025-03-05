@@ -65,11 +65,6 @@ const Signup = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Verification email sent!",
-        description: "Please check your email to verify your account.",
-      });
-
       // Create profile in profiles table
       const { error: profileError } = await supabase
         .from('profiles')
@@ -86,7 +81,25 @@ const Signup = () => {
 
       if (profileError) throw profileError;
 
-      navigate("/login");
+      // Sign in the user automatically
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
+      });
+      
+      if (signInError) {
+        toast({
+          title: "Account created!",
+          description: "Please verify your email and log in.",
+        });
+        navigate("/login");
+      } else {
+        toast({
+          title: "Welcome to InternConnect!",
+          description: "Your account has been created successfully.",
+        });
+        navigate("/dashboard");
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",

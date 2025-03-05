@@ -59,6 +59,9 @@ export const Header = () => {
             <>
               {user ? (
                 <div className="flex items-center gap-4">
+                  <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+                    Dashboard
+                  </Button>
                   <span className="text-sm font-medium text-gray-700">
                     {user.email}
                   </span>
