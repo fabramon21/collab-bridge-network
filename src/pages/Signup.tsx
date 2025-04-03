@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -19,7 +18,7 @@ import * as z from "zod";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Must be a valid .edu email").endsWith(".edu", "Must be a .edu email"),
+  email: z.string().email("Please enter a valid email"),
   school: z.string().min(2, "Please enter your school name"),
   linkedin: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   address: z.string().min(5, "Please enter your full address"),
@@ -50,7 +49,7 @@ const Signup = () => {
       setIsLoading(true);
       
       // Sign up with Supabase
-      const { data, error } = await supabase.auth.signUp({
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
         options: {
@@ -63,48 +62,49 @@ const Signup = () => {
         },
       });
 
-      if (error) throw error;
+      if (authError) {
+        console.error('Signup error:', authError);
+        throw new Error(authError.message);
+      }
+
+      if (!authData.user) {
+        throw new Error('No user data returned from signup');
+      }
 
       // Create profile in profiles table
       const { error: profileError } = await supabase
         .from('profiles')
         .insert([
           {
-            id: data.user?.id,
+            id: authData.user.id,
             full_name: values.name,
             email: values.email,
             school: values.school,
-            linkedin: values.linkedin,
+            linkedin: values.linkedin || null,
             address: values.address,
           }
         ]);
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        // If profile creation fails, clean up the auth user
+        await supabase.auth.signOut();
+        throw new Error('Failed to create profile: ' + profileError.message);
+      }
 
-      // Sign in the user automatically
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: values.email,
-        password: values.password,
+      toast({
+        title: "Account created successfully!",
+        description: "Please check your email to confirm your account.",
       });
       
-      if (signInError) {
-        toast({
-          title: "Account created!",
-          description: "Please verify your email and log in.",
-        });
-        navigate("/login");
-      } else {
-        toast({
-          title: "Welcome to InternConnect!",
-          description: "Your account has been created successfully.",
-        });
-        navigate("/dashboard");
-      }
+      navigate("/login");
+      
     } catch (error: any) {
+      console.error('Signup process error:', error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: error.message || "Something went wrong",
+        title: "Signup failed",
+        description: error.message || "An unexpected error occurred during signup",
       });
     } finally {
       setIsLoading(false);
@@ -117,6 +117,12 @@ const Signup = () => {
         <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
           Create your account
         </h2>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          Already have an account?{" "}
+          <Link to="/login" className="font-medium text-primary hover:text-primary/90">
+            Sign in
+          </Link>
+        </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
@@ -130,7 +136,7 @@ const Signup = () => {
                   <FormItem>
                     <FormLabel>Full name</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -142,9 +148,9 @@ const Signup = () => {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email address (.edu)</FormLabel>
+                    <FormLabel>Email address</FormLabel>
                     <FormControl>
-                      <Input type="email" {...field} />
+                      <Input type="email" {...field} disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -158,7 +164,7 @@ const Signup = () => {
                   <FormItem>
                     <FormLabel>School</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -172,7 +178,11 @@ const Signup = () => {
                   <FormItem>
                     <FormLabel>LinkedIn Profile (optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://linkedin.com/in/username" {...field} />
+                      <Input 
+                        placeholder="https://linkedin.com/in/username" 
+                        {...field} 
+                        disabled={isLoading}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -186,7 +196,7 @@ const Signup = () => {
                   <FormItem>
                     <FormLabel>Address</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -200,31 +210,26 @@ const Signup = () => {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <Input 
+                        type="password" 
+                        {...field} 
+                        disabled={isLoading}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading}
+              >
                 {isLoading ? "Creating account..." : "Sign up"}
               </Button>
             </form>
           </Form>
-
-          <div className="mt-6">
-            <div className="relative">
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 text-gray-500">
-                  Already have an account?{" "}
-                  <Link to="/login" className="font-medium text-primary hover:text-primary/90">
-                    Sign in
-                  </Link>
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

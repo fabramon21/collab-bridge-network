@@ -1,12 +1,62 @@
-
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '../types/supabase';
 
-const supabaseUrl = 'https://iqfbvgvvwxjvwqtlxvqm.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxZmJ2Z3Z2d3hqdndxdGx4dnFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDc4MjI5NzcsImV4cCI6MjAyMzM5ODk3N30.0I8dMKUMjhzTZQDVuqFOXDxP5Yw1RxHDfZHDVGkGQ8Y';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase configuration. Please make sure you have set up your Supabase project correctly.');
+  throw new Error('Missing Supabase environment variables');
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Types for our database tables
+export type Profile = {
+  id: string;
+  full_name: string;
+  email: string;
+  school: string;
+  linkedin: string;
+  address: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Message = {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  created_at: string;
+  read_at: string | null;
+};
+
+export type Connection = {
+  id: string;
+  user_id: string;
+  connected_user_id: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
+  updated_at: string;
+};
+
+export type Event = {
+  id: string;
+  creator_id: string;
+  title: string;
+  description: string | null;
+  event_type: 'social' | 'roommate' | 'professional';
+  location: string | null;
+  start_time: string;
+  end_time: string;
+  max_participants: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EventParticipant = {
+  id: string;
+  event_id: string;
+  user_id: string;
+  status: 'interested' | 'attending' | 'not_attending';
+  created_at: string;
+};
