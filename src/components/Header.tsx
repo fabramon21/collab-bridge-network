@@ -2,17 +2,29 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Bell, Menu, X } from "lucide-react";
 import { useState } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export const Header = () => {
+  const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user } = useAuth();
-  const isLoggedIn = !!user;
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
   };
 
   return (
@@ -24,7 +36,7 @@ export const Header = () => {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex space-x-4 items-center">
-          {isLoggedIn ? (
+          {user && (
             <>
               <Button variant="ghost" onClick={() => navigate("/dashboard")}>
                 Dashboard
@@ -44,18 +56,31 @@ export const Header = () => {
                   3
                 </span>
               </Button>
-              <Avatar className="h-8 w-8 cursor-pointer" onClick={() => navigate("/profile")}>
-                <AvatarFallback>
-                  {user?.email?.substring(0, 2).toUpperCase() || "U"}
-                </AvatarFallback>
-              </Avatar>
-            </>
-          ) : (
-            <>
-              <Button variant="ghost" onClick={() => navigate("/login")}>
-                Log in
-              </Button>
-              <Button onClick={() => navigate("/signup")}>Sign up</Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={profile?.avatar_url || ''} alt={profile?.full_name || ''} />
+                      <AvatarFallback>{profile?.full_name?.charAt(0) || 'U'}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{profile?.full_name}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {profile?.university}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile">Profile</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSignOut}>Log out</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </>
           )}
         </div>
@@ -70,7 +95,7 @@ export const Header = () => {
       {isMenuOpen && (
         <div className="md:hidden bg-white border-t py-4 px-4">
           <div className="flex flex-col space-y-3">
-            {isLoggedIn ? (
+            {user ? (
               <>
                 <Button 
                   variant="ghost" 
