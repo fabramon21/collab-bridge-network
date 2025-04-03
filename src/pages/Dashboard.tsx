@@ -12,12 +12,6 @@ import { useToast } from "@/hooks/use-toast";
 const Dashboard = () => {
   const { toast } = useToast();
   
-  // Mock profile data since we're bypassing authentication
-  const [profile] = useState({
-    full_name: "Demo User",
-    school: "Demo University",
-  });
-
   const dashboardItems = [
     {
       title: "Connect with Peers",
@@ -109,10 +103,7 @@ const Dashboard = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <div className="lg:col-span-2">
-              <ProfileCard 
-                name={profile.full_name} 
-                school={profile.school} 
-              />
+              <ProfileCard />
             </div>
             <div>
               <NotificationsPanel />
