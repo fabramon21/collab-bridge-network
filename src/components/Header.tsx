@@ -4,12 +4,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { Bell, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Header = () => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  // This would normally use authentication state
-  const [isLoggedIn] = useState(true);
+  const { user } = useAuth();
+  const isLoggedIn = !!user;
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -42,7 +43,9 @@ export const Header = () => {
                 </span>
               </Button>
               <Avatar className="h-8 w-8 cursor-pointer" onClick={() => navigate("/profile")}>
-                <AvatarFallback>DU</AvatarFallback>
+                <AvatarFallback>
+                  {user?.email?.substring(0, 2).toUpperCase() || "U"}
+                </AvatarFallback>
               </Avatar>
             </>
           ) : (
