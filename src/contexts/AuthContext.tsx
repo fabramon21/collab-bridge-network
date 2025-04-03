@@ -145,9 +145,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       if (!user) throw new Error("Not authenticated");
       
+      // Convert field names if necessary for compatibility with both schemas
+      const profileData = {
+        ...data,
+        school: data.university || data.school, // Ensure school is set if university is provided
+        linkedin: data.linkedin_url || data.linkedin // Ensure linkedin is set if linkedin_url is provided
+      };
+      
       const { error } = await supabase
         .from('profiles')
-        .update(data)
+        .update(profileData)
         .eq('id', user.id);
       
       if (error) throw error;
