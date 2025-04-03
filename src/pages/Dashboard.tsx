@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { MessageCircle, Users, Home, Briefcase, PlusCircle, Search } from "lucide-react";
+import { MessageCircle, Users, Home, Briefcase, PlusCircle, Search, Activity, User, Clock, Heart } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { ProfileCard } from "@/components/dashboard/ProfileCard";
@@ -8,9 +8,42 @@ import { FeatureCard } from "@/components/dashboard/FeatureCard";
 import { ProfileTasks } from "@/components/dashboard/ProfileTasks";
 import { NotificationsPanel } from "@/components/dashboard/NotificationsPanel";
 import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Dashboard = () => {
   const { toast } = useToast();
+  
+  // Statistics data 
+  const stats = [
+    {
+      title: "Profile Views",
+      value: "1,234",
+      icon: User,
+      color: "text-blue-500",
+      bgColor: "bg-blue-100",
+    },
+    {
+      title: "Active Discussions",
+      value: "42",
+      icon: MessageCircle,
+      color: "text-green-500",
+      bgColor: "bg-green-100",
+    },
+    {
+      title: "Upcoming Deadlines",
+      value: "7",
+      icon: Clock,
+      color: "text-amber-500",
+      bgColor: "bg-amber-100",
+    },
+    {
+      title: "New Connections",
+      value: "12",
+      icon: Heart,
+      color: "text-rose-500",
+      bgColor: "bg-rose-100",
+    },
+  ];
   
   const dashboardItems = [
     {
@@ -99,6 +132,25 @@ const Dashboard = () => {
                 <span>Create Post</span>
               </Button>
             </div>
+          </div>
+          
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {stats.map((stat, index) => (
+              <Card key={index} className="shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-1">{stat.title}</p>
+                      <p className="text-2xl font-bold">{stat.value}</p>
+                    </div>
+                    <div className={`${stat.bgColor} p-2 rounded-full`}>
+                      <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
