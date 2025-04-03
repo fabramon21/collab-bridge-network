@@ -98,17 +98,42 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signUp = async (email: string, password: string, userData: any) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      // Sign up with Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: userData.fullName,
+            school: userData.school,
+            linkedin: userData.linkedin,
+            address: userData.address,
           },
         },
       });
 
       if (error) throw error;
+      
+      // Create profile record explicitly
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: data.user.id,
+              full_name: userData.fullName,
+              email: email,
+              school: userData.school,
+              linkedin: userData.linkedin,
+              address: userData.address,
+            }
+          ]);
+
+        if (profileError) {
+          console.error("Profile creation error:", profileError);
+          throw profileError;
+        }
+      }
       
       toast({
         title: "Account created",

@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -16,6 +15,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { useAuth } from "@/contexts/AuthContext";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -32,6 +32,7 @@ const Signup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const { signUp } = useAuth();
 
   const form = useForm<SignupValues>({
     resolver: zodResolver(signupSchema),
@@ -50,72 +51,15 @@ const Signup = () => {
       setIsLoading(true);
       console.log("Starting signup process with values:", values);
       
-      // Sign up with Supabase
-      const { data, error } = await supabase.auth.signUp({
-        email: values.email,
-        password: values.password,
-        options: {
-          data: {
-            full_name: values.name,
-            school: values.school,
-            linkedin: values.linkedin,
-            address: values.address,
-          },
-        },
+      // Use the AuthContext signUp method which handles both auth and profile creation
+      await signUp(values.email, values.password, {
+        fullName: values.name,
+        school: values.school,
+        linkedin: values.linkedin,
+        address: values.address,
       });
-
-      if (error) {
-        console.error("Signup error:", error);
-        throw error;
-      }
-
-      console.log("Auth signup successful:", data);
-
-      // Create profile in profiles table
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            {
-              id: data.user.id,
-              full_name: values.name,
-              university: values.school,
-              linkedin_url: values.linkedin,
-              address: values.address,
-            }
-          ]);
-
-        if (profileError) {
-          console.error("Profile creation error:", profileError);
-          throw profileError;
-        }
-        
-        console.log("Profile created successfully");
-      }
-
-      // Sign in the user automatically
-      if (data.user) {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: values.email,
-          password: values.password,
-        });
-        
-        if (signInError) {
-          console.error("Auto sign-in error:", signInError);
-          toast({
-            title: "Account created!",
-            description: "Please verify your email and log in.",
-          });
-          navigate("/login");
-        } else {
-          console.log("Auto sign-in successful");
-          toast({
-            title: "Welcome to InternConnect!",
-            description: "Your account has been created successfully.",
-          });
-          navigate("/dashboard");
-        }
-      }
+      
+      // Navigation is handled within the signUp method in AuthContext
     } catch (error: any) {
       console.error("Overall signup error:", error);
       toast({
