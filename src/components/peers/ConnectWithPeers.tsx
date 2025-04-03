@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -65,7 +64,6 @@ export const ConnectWithPeers = () => {
       if (!user) return;
       
       try {
-        // Fetch profiles
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('*')
@@ -73,7 +71,6 @@ export const ConnectWithPeers = () => {
           
         if (profilesError) throw profilesError;
         
-        // Fetch connections
         const { data: connectionsData, error: connectionsError } = await supabase
           .from('connections')
           .select('*')
@@ -95,7 +92,6 @@ export const ConnectWithPeers = () => {
   }, [user]);
 
   useEffect(() => {
-    // Apply filters
     let results = profiles;
     
     if (search) {
@@ -138,7 +134,6 @@ export const ConnectWithPeers = () => {
 
   const sendConnectionRequest = async (recipientId: string) => {
     try {
-      // Create connection
       const { error: connectionError } = await supabase
         .from('connections')
         .insert({
@@ -149,7 +144,6 @@ export const ConnectWithPeers = () => {
         
       if (connectionError) throw connectionError;
       
-      // Create notification
       const { error: notificationError } = await supabase
         .from('notifications')
         .insert({
@@ -161,9 +155,8 @@ export const ConnectWithPeers = () => {
         
       if (notificationError) throw notificationError;
       
-      // Update local state
       const newConnection = {
-        id: Date.now().toString(), // Temporary ID until we refresh
+        id: Date.now().toString(),
         sender_id: user?.id!,
         recipient_id: recipientId,
         status: 'pending'
@@ -187,7 +180,6 @@ export const ConnectWithPeers = () => {
 
   const acceptConnectionRequest = async (connectionId: string, senderId: string) => {
     try {
-      // Update connection
       const { error: connectionError } = await supabase
         .from('connections')
         .update({ status: 'accepted' })
@@ -195,7 +187,6 @@ export const ConnectWithPeers = () => {
         
       if (connectionError) throw connectionError;
       
-      // Create notification
       const { error: notificationError } = await supabase
         .from('notifications')
         .insert({
@@ -207,7 +198,6 @@ export const ConnectWithPeers = () => {
         
       if (notificationError) throw notificationError;
       
-      // Update local state
       setConnections(connections.map(c => 
         c.id === connectionId ? { ...c, status: 'accepted' } : c
       ));
