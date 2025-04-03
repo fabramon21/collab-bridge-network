@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -78,9 +79,8 @@ const Signup = () => {
             {
               id: data.user.id,
               full_name: values.name,
-              email: values.email,
-              school: values.school,
-              linkedin: values.linkedin,
+              university: values.school,
+              linkedin_url: values.linkedin,
               address: values.address,
             }
           ]);

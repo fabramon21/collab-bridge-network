@@ -14,6 +14,7 @@ export const ProfileCard = () => {
     full_name: profile?.full_name || "",
     university: profile?.university || "",
     location: profile?.location || "",
+    address: profile?.address || "",
     bio: profile?.bio || "",
     linkedin_url: profile?.linkedin_url || "",
   });
@@ -95,6 +96,17 @@ export const ProfileCard = () => {
               value={formData.location}
               onChange={handleInputChange}
               placeholder="Your location"
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="address">Address</Label>
+            <Input 
+              id="address"
+              name="address"
+              value={formData.address}
+              onChange={handleInputChange}
+              placeholder="Your full address"
             />
           </div>
           
