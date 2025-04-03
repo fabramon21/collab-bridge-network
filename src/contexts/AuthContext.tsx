@@ -1,22 +1,39 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import type { Profile } from '@/types';
+import { User } from '@supabase/supabase-js';
+import { useNavigate } from 'react-router-dom';
 
-type SignUpData = {
-  email: string;
-  password: string;
-  fullName: string;
+type Profile = {
+  id: string;
+  full_name: string;
   university: string;
-  linkedin_url?: string;
+  linkedin_url: string | null;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
   address: string;
+  bio: string;
+  interests: string[];
+  is_online: boolean;
+  last_active: string;
+  location: string;
+  profile_image_url: string;
+  skills: string[];
 };
 
 type AuthContextType = {
-  user: Profile | null;
+  user: User | null;
+  profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (data: SignUpData) => Promise<void>;
+  signUp: (data: {
+    email: string;
+    password: string;
+    full_name: string;
+    university: string;
+    linkedin_url?: string;
+  }) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (profile: Partial<Profile>) => Promise<void>;
 };
@@ -24,8 +41,10 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<Profile | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -39,13 +58,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Listen for changes on auth state
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching profile:', error);
+        } else {
+          setProfile(profileData as Profile);
+        }
       } else {
-        setUser(null);
-        setLoading(false);
+        setProfile(null);
       }
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -72,71 +102,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Error signing in:', error);
       toast({
-        title: "Logged in successfully",
-        description: "Welcome back!",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to sign in',
+        variant: 'destructive',
       });
-    } catch (error: any) {
-      toast({
-        title: "Login failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
     }
   };
 
-  const signUp = async (userData: SignUpData) => {
+  const signUp = async (data: {
+    email: string;
+    password: string;
+    full_name: string;
+    university: string;
+    linkedin_url?: string;
+  }) => {
     try {
-      // Sign up with Supabase Auth
-      const { data, error } = await supabase.auth.signUp({
-        email: userData.email,
-        password: userData.password,
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
         options: {
           data: {
-            full_name: userData.fullName,
-            university: userData.university,
-            linkedin_url: userData.linkedin_url,
-            address: userData.address,
+            full_name: data.full_name,
+            university: data.university,
+            linkedin_url: data.linkedin_url,
           },
         },
       });
 
-      if (error) throw error;
-      
-      // Create profile record explicitly
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            {
-              id: data.user.id,
-              full_name: userData.fullName,
-              email: userData.email,
-              university: userData.university,
-              linkedin_url: userData.linkedin_url || null,
-              address: userData.address,
-            }
-          ]);
+      if (signUpError) throw signUpError;
 
-        if (profileError) {
-          console.error("Profile creation error:", profileError);
-          throw profileError;
-        }
-      }
-      
       toast({
-        title: "Account created successfully!",
-        description: "Please check your email to confirm your account.",
+        title: 'Success',
+        description: 'Please check your email to verify your account.',
       });
-    } catch (error: any) {
+      navigate('/login');
+    } catch (error) {
+      console.error('Error signing up:', error);
       toast({
-        title: "Signup failed",
-        description: error.message,
-        variant: "destructive",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to sign up',
+        variant: 'destructive',
       });
-      throw error;
     }
   };
 
@@ -144,15 +154,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      
+      navigate('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
       toast({
-        title: "Logged out successfully",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error signing out",
-        description: error.message,
-        variant: "destructive",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to sign out',
+        variant: 'destructive',
       });
     }
   };
@@ -186,6 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = {
     user,
+    profile,
     loading,
     signIn,
     signUp,
