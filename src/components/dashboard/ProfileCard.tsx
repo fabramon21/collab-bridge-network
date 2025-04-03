@@ -12,11 +12,11 @@ export const ProfileCard = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || "",
-    university: profile?.university || profile?.school || "", // Use university or school if available
+    university: profile?.university || "", // Changed from school to university
     location: profile?.location || "",
     address: profile?.address || "",
     bio: profile?.bio || "",
-    linkedin_url: profile?.linkedin_url || profile?.linkedin || "", // Use linkedin_url or linkedin if available
+    linkedin_url: profile?.linkedin_url || "", // Changed from linkedin to linkedin_url
   });
   const { toast } = useToast();
 
@@ -53,7 +53,7 @@ export const ProfileCard = () => {
         </Avatar>
         <div className="flex-1">
           <h2 className="text-xl font-bold">{profile?.full_name}</h2>
-          <p className="text-gray-600">{profile?.university || profile?.school || "Add your university"}</p>
+          <p className="text-gray-600">{profile?.university || "Add your university"}</p> {/* Changed from school to university */}
           {profile?.location && <p className="text-gray-600">{profile.location}</p>}
         </div>
         <Button 
@@ -78,10 +78,10 @@ export const ProfileCard = () => {
           </div>
           
           <div className="grid gap-2">
-            <Label htmlFor="university">University</Label>
+            <Label htmlFor="university">University</Label> {/* Changed label from School to University */}
             <Input 
               id="university"
-              name="university"
+              name="university" 
               value={formData.university}
               onChange={handleInputChange}
               placeholder="Your university"
@@ -122,10 +122,10 @@ export const ProfileCard = () => {
           </div>
           
           <div className="grid gap-2">
-            <Label htmlFor="linkedin_url">LinkedIn URL</Label>
+            <Label htmlFor="linkedin_url">LinkedIn URL</Label> {/* Changed label from LinkedIn to LinkedIn URL */}
             <Input 
               id="linkedin_url"
-              name="linkedin_url"
+              name="linkedin_url" 
               value={formData.linkedin_url}
               onChange={handleInputChange}
               placeholder="Your LinkedIn profile URL"
