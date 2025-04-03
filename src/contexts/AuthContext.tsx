@@ -1,13 +1,22 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import type { Profile } from '@/lib/supabase';
+import type { Profile } from '@/types';
+
+type SignUpData = {
+  email: string;
+  password: string;
+  fullName: string;
+  university: string;
+  linkedin_url?: string;
+  address: string;
+};
 
 type AuthContextType = {
   user: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, fullName: string) => Promise<void>;
+  signUp: (data: SignUpData) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (profile: Partial<Profile>) => Promise<void>;
 };
@@ -78,38 +87,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (userData: SignUpData) => {
     try {
+      // Sign up with Supabase Auth
       const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: userData.email,
+        password: userData.password,
         options: {
           data: {
-            full_name: fullName,
+            full_name: userData.fullName,
+            university: userData.university,
+            linkedin_url: userData.linkedin_url,
+            address: userData.address,
           },
         },
       });
 
       if (error) throw error;
       
-      toast({
-        title: "Account created",
-        description: "Welcome to InternConnect!",
-      });
-
+      // Create profile record explicitly
       if (data.user) {
         const { error: profileError } = await supabase
           .from('profiles')
           .insert([
             {
               id: data.user.id,
-              full_name: fullName,
-              email: email,
-            },
+              full_name: userData.fullName,
+              email: userData.email,
+              university: userData.university,
+              linkedin_url: userData.linkedin_url || null,
+              address: userData.address,
+            }
           ]);
 
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error("Profile creation error:", profileError);
+          throw profileError;
+        }
       }
+      
+      toast({
+        title: "Account created successfully!",
+        description: "Please check your email to confirm your account.",
+      });
     } catch (error: any) {
       toast({
         title: "Signup failed",

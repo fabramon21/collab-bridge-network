@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,7 +102,6 @@ export const HousingListings = () => {
         setListings(data || []);
         setFilteredListings(data || []);
         
-        // Set initial price range based on data
         if (data && data.length > 0) {
           const prices = data.map(l => l.price);
           const minPrice = Math.min(...prices);
@@ -119,7 +117,6 @@ export const HousingListings = () => {
     
     fetchListings();
     
-    // Subscribe to realtime changes
     const channel = supabase
       .channel('public:housing_listings')
       .on('postgres_changes', { 
@@ -128,7 +125,6 @@ export const HousingListings = () => {
         table: 'housing_listings'
       }, async (payload) => {
         if (payload.eventType === 'INSERT') {
-          // Fetch owner info for the new listing
           const { data: ownerData } = await supabase
             .from('profiles')
             .select('full_name, profile_image_url')
@@ -141,7 +137,6 @@ export const HousingListings = () => {
           } as HousingListing;
           
           setListings(prev => [newListing, ...prev]);
-          // Reapply filters
           applyFilters([newListing, ...listings]);
         } else if (payload.eventType === 'UPDATE') {
           setListings(prev => 
@@ -149,7 +144,6 @@ export const HousingListings = () => {
               listing.id === payload.new.id ? { ...listing, ...payload.new } : listing
             )
           );
-          // Reapply filters
           applyFilters(listings.map(listing => 
             listing.id === payload.new.id ? { ...listing, ...payload.new } : listing
           ));

@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import {
   Form,
@@ -15,9 +14,10 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { useAuth } from "@/contexts/AuthContext";
 
 const signupSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
+  fullName: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email"),
   school: z.string().min(2, "Please enter your school name"),
   linkedin: z.string().url("Must be a valid URL").optional().or(z.literal("")),
@@ -30,12 +30,13 @@ type SignupValues = z.infer<typeof signupSchema>;
 const Signup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signUp } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<SignupValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
-      name: "",
+      fullName: "",
       email: "",
       school: "",
       linkedin: "",
@@ -48,64 +49,20 @@ const Signup = () => {
     try {
       setIsLoading(true);
       
-      // Sign up with Supabase
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      // Ensure all required fields are present
+      const signupData = {
         email: values.email,
         password: values.password,
-        options: {
-          data: {
-            full_name: values.name,
-            school: values.school,
-            linkedin: values.linkedin,
-            address: values.address,
-          },
-        },
-      });
-
-      if (authError) {
-        console.error('Signup error:', authError);
-        throw new Error(authError.message);
-      }
-
-      if (!authData.user) {
-        throw new Error('No user data returned from signup');
-      }
-
-      // Create profile in profiles table
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: authData.user.id,
-            full_name: values.name,
-            email: values.email,
-            school: values.school,
-            linkedin: values.linkedin || null,
-            address: values.address,
-          }
-        ]);
-
-      if (profileError) {
-        console.error('Profile creation error:', profileError);
-        // If profile creation fails, clean up the auth user
-        await supabase.auth.signOut();
-        throw new Error('Failed to create profile: ' + profileError.message);
-      }
-
-      toast({
-        title: "Account created successfully!",
-        description: "Please check your email to confirm your account.",
-      });
+        fullName: values.fullName,
+        school: values.school,
+        linkedin: values.linkedin,
+        address: values.address,
+      };
       
+      await signUp(signupData);
       navigate("/login");
-      
     } catch (error: any) {
-      console.error('Signup process error:', error);
-      toast({
-        variant: "destructive",
-        title: "Signup failed",
-        description: error.message || "An unexpected error occurred during signup",
-      });
+      console.error('Signup error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -131,7 +88,7 @@ const Signup = () => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
-                name="name"
+                name="fullName"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Full name</FormLabel>

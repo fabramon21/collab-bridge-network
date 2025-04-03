@@ -12,10 +12,11 @@ export const ProfileCard = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || "",
-    university: profile?.university || "",
+    university: profile?.university || profile?.school || "", // Use university or school if available
     location: profile?.location || "",
+    address: profile?.address || "",
     bio: profile?.bio || "",
-    linkedin_url: profile?.linkedin_url || "",
+    linkedin_url: profile?.linkedin_url || profile?.linkedin || "", // Use linkedin_url or linkedin if available
   });
   const { toast } = useToast();
 
@@ -52,7 +53,7 @@ export const ProfileCard = () => {
         </Avatar>
         <div className="flex-1">
           <h2 className="text-xl font-bold">{profile?.full_name}</h2>
-          <p className="text-gray-600">{profile?.university || "Add your university"}</p>
+          <p className="text-gray-600">{profile?.university || profile?.school || "Add your university"}</p>
           {profile?.location && <p className="text-gray-600">{profile.location}</p>}
         </div>
         <Button 
@@ -95,6 +96,17 @@ export const ProfileCard = () => {
               value={formData.location}
               onChange={handleInputChange}
               placeholder="Your location"
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="address">Address</Label>
+            <Input 
+              id="address"
+              name="address"
+              value={formData.address}
+              onChange={handleInputChange}
+              placeholder="Your full address"
             />
           </div>
           
