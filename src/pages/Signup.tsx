@@ -1,9 +1,8 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
   Form,
@@ -48,6 +47,7 @@ const Signup = () => {
   const onSubmit = async (values: SignupValues) => {
     try {
       setIsLoading(true);
+      console.log("Starting signup process with values:", values);
       
       // Sign up with Supabase
       const { data, error } = await supabase.auth.signUp({
@@ -63,44 +63,61 @@ const Signup = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Signup error:", error);
+        throw error;
+      }
+
+      console.log("Auth signup successful:", data);
 
       // Create profile in profiles table
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: data.user?.id,
-            full_name: values.name,
-            email: values.email,
-            school: values.school,
-            linkedin: values.linkedin,
-            address: values.address,
-          }
-        ]);
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: data.user.id,
+              full_name: values.name,
+              email: values.email,
+              school: values.school,
+              linkedin: values.linkedin,
+              address: values.address,
+            }
+          ]);
 
-      if (profileError) throw profileError;
+        if (profileError) {
+          console.error("Profile creation error:", profileError);
+          throw profileError;
+        }
+        
+        console.log("Profile created successfully");
+      }
 
       // Sign in the user automatically
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: values.email,
-        password: values.password,
-      });
-      
-      if (signInError) {
-        toast({
-          title: "Account created!",
-          description: "Please verify your email and log in.",
+      if (data.user) {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: values.email,
+          password: values.password,
         });
-        navigate("/login");
-      } else {
-        toast({
-          title: "Welcome to InternConnect!",
-          description: "Your account has been created successfully.",
-        });
-        navigate("/dashboard");
+        
+        if (signInError) {
+          console.error("Auto sign-in error:", signInError);
+          toast({
+            title: "Account created!",
+            description: "Please verify your email and log in.",
+          });
+          navigate("/login");
+        } else {
+          console.log("Auto sign-in successful");
+          toast({
+            title: "Welcome to InternConnect!",
+            description: "Your account has been created successfully.",
+          });
+          navigate("/dashboard");
+        }
       }
     } catch (error: any) {
+      console.error("Overall signup error:", error);
       toast({
         variant: "destructive",
         title: "Error",
