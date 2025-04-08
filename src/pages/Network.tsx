@@ -1,25 +1,29 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
+import { ConnectionCard } from '@/components/network/ConnectionCard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, Users, UserPlus } from 'lucide-react';
 
 type Profile = {
   id: string;
   full_name: string;
-  school: string;
-  linkedin: string;
-  address: string;
+  university: string;
+  linkedin_url: string | null;
+  location: string | null;
+  bio: string | null;
 };
 
 type Connection = {
   id: string;
-  user_id: string;
-  connected_user_id: string;
+  sender_id: string;
+  recipient_id: string;
   status: 'pending' | 'accepted' | 'rejected';
-  connected_user: Profile;
+  created_at: string | null;
 };
 
 export default function Network() {
@@ -28,7 +32,8 @@ export default function Network() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('find');
 
   useEffect(() => {
     if (user) {
@@ -40,26 +45,20 @@ export default function Network() {
   const fetchConnections = async () => {
     if (!user) return;
 
-    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('connections')
-        .select(`
-          *,
-          connected_user:profiles!connections_connected_user_id_fkey(*)
-        `)
-        .or(`user_id.eq.${user.id},connected_user_id.eq.${user.id}`);
+        .select('*')
+        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`);
 
       if (error) throw error;
-      setConnections(data);
+      setConnections(data || []);
     } catch (error) {
       toast({
         title: 'Error',
         description: 'Failed to fetch connections',
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -69,17 +68,19 @@ export default function Network() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, full_name, university, linkedin_url, location, bio')
         .neq('id', user.id);
 
       if (error) throw error;
-      setProfiles(data);
+      setProfiles(data || []);
     } catch (error) {
       toast({
         title: 'Error',
         description: 'Failed to fetch profiles',
         variant: 'destructive',
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -89,24 +90,21 @@ export default function Network() {
     try {
       const { error } = await supabase.from('connections').insert([
         {
-          user_id: user.id,
-          connected_user_id: userId,
+          sender_id: user.id,
+          recipient_id: userId,
           status: 'pending',
         },
       ]);
 
       if (error) throw error;
       await fetchConnections();
-      toast({
-        title: 'Success',
-        description: 'Connection request sent',
-      });
     } catch (error) {
       toast({
         title: 'Error',
         description: 'Failed to send connection request',
         variant: 'destructive',
       });
+      throw error;
     }
   };
 
@@ -119,6 +117,7 @@ export default function Network() {
 
       if (error) throw error;
       await fetchConnections();
+      
       toast({
         title: 'Success',
         description: `Connection ${status}`,
@@ -132,112 +131,153 @@ export default function Network() {
     }
   };
 
+  const pendingRequests = connections.filter(
+    (c) => c.status === 'pending' && c.recipient_id === user?.id
+  );
+
+  const myConnections = connections.filter(
+    (c) => c.status === 'accepted' && (c.sender_id === user?.id || c.recipient_id === user?.id)
+  );
+
   const filteredProfiles = profiles.filter(
     (profile) =>
       profile.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      profile.school.toLowerCase().includes(searchTerm.toLowerCase())
+      (profile.university && profile.university.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (profile.location && profile.location.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  const getConnectionStatus = (profileId: string) => {
+    return connections.find(
+      (c) =>
+        (c.sender_id === user?.id && c.recipient_id === profileId) ||
+        (c.recipient_id === user?.id && c.sender_id === profileId)
+    );
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Network</h1>
+        <h1 className="text-3xl font-bold mb-6">Network</h1>
 
-        {/* Search */}
-        <div className="mb-8">
-          <Input
-            placeholder="Search by name or school..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+        <Tabs 
+          value={activeTab} 
+          onValueChange={setActiveTab}
+          className="mb-8"
+        >
+          <TabsList className="grid w-full grid-cols-3 mb-8">
+            <TabsTrigger value="find" className="flex items-center gap-2">
+              <UserPlus className="h-4 w-4" /> Find Interns
+            </TabsTrigger>
+            <TabsTrigger value="connections" className="flex items-center gap-2">
+              <Users className="h-4 w-4" /> My Connections
+              {myConnections.length > 0 && (
+                <span className="bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">
+                  {myConnections.length}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="requests" className="flex items-center gap-2">
+              <UserPlus className="h-4 w-4" /> Requests
+              {pendingRequests.length > 0 && (
+                <span className="bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center text-xs">
+                  {pendingRequests.length}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Connection Requests */}
-        {connections.filter((c) => c.status === 'pending' && c.connected_user_id === user?.id).length >
-          0 && (
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">Connection Requests</h2>
-            <div className="space-y-4">
-              {connections
-                .filter((c) => c.status === 'pending' && c.connected_user_id === user?.id)
-                .map((connection) => (
-                  <div
-                    key={connection.id}
-                    className="flex items-center justify-between p-4 border rounded-lg"
-                  >
-                    <div className="flex items-center gap-4">
-                      <Avatar>
-                        <AvatarImage
-                          src={`https://avatar.vercel.sh/${connection.connected_user.full_name}`}
-                        />
-                        <AvatarFallback>
-                          {connection.connected_user.full_name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{connection.connected_user.full_name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {connection.connected_user.school}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => handleConnectionResponse(connection.id, 'rejected')}
-                      >
-                        Decline
-                      </Button>
-                      <Button onClick={() => handleConnectionResponse(connection.id, 'accepted')}>
-                        Accept
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </div>
-        )}
+          <TabsContent value="find">
+            <div>
+              <Input
+                placeholder="Search by name, university, or location..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="mb-6"
+              />
 
-        {/* Available Profiles */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Find Interns</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredProfiles.map((profile) => {
-              const connection = connections.find(
-                (c) =>
-                  (c.user_id === user?.id && c.connected_user_id === profile.id) ||
-                  (c.connected_user_id === user?.id && c.user_id === profile.id)
-              );
-
-              return (
-                <div key={profile.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <Avatar>
-                      <AvatarImage src={`https://avatar.vercel.sh/${profile.full_name}`} />
-                      <AvatarFallback>{profile.full_name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{profile.full_name}</p>
-                      <p className="text-sm text-muted-foreground">{profile.school}</p>
-                    </div>
-                  </div>
-                  {connection ? (
-                    <Button variant="outline" disabled>
-                      {connection.status === 'pending'
-                        ? 'Request Sent'
-                        : connection.status === 'accepted'
-                        ? 'Connected'
-                        : 'Rejected'}
-                    </Button>
-                  ) : (
-                    <Button onClick={() => sendConnectionRequest(profile.id)}>Connect</Button>
-                  )}
+              {loading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
-              );
-            })}
-          </div>
-        </div>
+              ) : filteredProfiles.length > 0 ? (
+                <div className="space-y-4">
+                  {filteredProfiles.map((profile) => {
+                    const connection = getConnectionStatus(profile.id);
+                    return (
+                      <ConnectionCard
+                        key={profile.id}
+                        profile={profile}
+                        connection={connection}
+                        onConnect={() => sendConnectionRequest(profile.id)}
+                      />
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No profiles found matching your search.
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="connections">
+            {myConnections.length > 0 ? (
+              <div className="space-y-4">
+                {myConnections.map((connection) => {
+                  const connectedProfileId = connection.sender_id === user?.id 
+                    ? connection.recipient_id 
+                    : connection.sender_id;
+                  
+                  const connectedProfile = profiles.find(p => p.id === connectedProfileId);
+                  
+                  if (!connectedProfile) return null;
+                  
+                  return (
+                    <ConnectionCard
+                      key={connection.id}
+                      profile={connectedProfile}
+                      connection={connection}
+                      onConnect={() => {}}
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                You don't have any connections yet. Connect with other interns to grow your network!
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="requests">
+            {pendingRequests.length > 0 ? (
+              <div className="space-y-4">
+                {pendingRequests.map((request) => {
+                  const senderProfile = profiles.find(p => p.id === request.sender_id);
+                  
+                  if (!senderProfile) return null;
+                  
+                  return (
+                    <ConnectionCard
+                      key={request.id}
+                      profile={senderProfile}
+                      connection={request}
+                      onConnect={() => {}}
+                      onAccept={(id) => handleConnectionResponse(id, 'accepted')}
+                      onDecline={(id) => handleConnectionResponse(id, 'rejected')}
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                You don't have any pending connection requests.
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
-} 
+}
