@@ -24,8 +24,12 @@ export function useAuthState() {
       
       // If session exists, fetch profile asynchronously
       if (session?.user) {
-        const profileData = await authService.fetchProfile(session.user.id);
-        setProfile(profileData);
+        // Use setTimeout to prevent potential deadlocks with Supabase client
+        setTimeout(async () => {
+          const profileData = await authService.fetchProfile(session.user.id);
+          console.log('Profile fetched after auth change:', profileData);
+          setProfile(profileData);
+        }, 0);
       } else {
         setProfile(null);
       }
@@ -43,6 +47,7 @@ export function useAuthState() {
         if (session?.user) {
           setUser(session.user);
           const profileData = await authService.fetchProfile(session.user.id);
+          console.log('Initial profile loaded:', profileData);
           setProfile(profileData);
         }
       } catch (error) {

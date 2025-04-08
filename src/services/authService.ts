@@ -7,6 +7,7 @@ export const authService = {
    * Sign in with email and password
    */
   signIn: async (email: string, password: string) => {
+    console.log('Auth service: signing in user', email);
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
     return data;
@@ -22,6 +23,7 @@ export const authService = {
     university: string;
     linkedin_url?: string;
   }) => {
+    console.log('Auth service: signing up new user', data.email);
     const { error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
@@ -41,6 +43,7 @@ export const authService = {
    * Sign out the current user
    */
   signOut: async () => {
+    console.log('Auth service: signing out user');
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   },
@@ -49,6 +52,7 @@ export const authService = {
    * Fetch the current session
    */
   getSession: async () => {
+    console.log('Auth service: getting current session');
     return await supabase.auth.getSession();
   },
 
@@ -56,6 +60,7 @@ export const authService = {
    * Fetch the user profile by ID
    */
   fetchProfile: async (userId: string): Promise<Profile | null> => {
+    console.log('Auth service: fetching profile for user', userId);
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -68,6 +73,7 @@ export const authService = {
         return null;
       }
       
+      console.log('Auth service: profile fetched successfully', data);
       return data as Profile;
     } catch (error) {
       console.error('Exception fetching profile:', error);
@@ -79,6 +85,7 @@ export const authService = {
    * Update user profile
    */
   updateProfile: async (userId: string, profileData: Partial<Profile>) => {
+    console.log('Auth service: updating profile for user', userId);
     const { error } = await supabase
       .from('profiles')
       .update(profileData)
