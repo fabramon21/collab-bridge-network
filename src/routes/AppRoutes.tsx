@@ -1,6 +1,6 @@
+
 import { Routes, Route, Navigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { Loader2 } from "lucide-react";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "../pages/Index";
 import Login from "../pages/Login";
 import Signup from "../pages/Signup";
@@ -9,25 +9,6 @@ import Messages from "../pages/Messages";
 import Network from "../pages/Network";
 import Profile from "../pages/Profile";
 import Events from "../pages/Events";
-
-// Protected route component that checks authentication
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
-  
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
-  
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  return <>{children}</>;
-};
 
 const AppRoutes = () => {
   return (

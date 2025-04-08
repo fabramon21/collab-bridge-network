@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
@@ -49,17 +50,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
+    const initializeAuth = async () => {
+      setLoading(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          setUser(session.user);
+          const { data: profileData, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (!error && profileData) {
+            setProfile(profileData as Profile);
+          }
+        }
+      } catch (error) {
+        console.error('Error during auth initialization:', error);
+      } finally {
         setLoading(false);
       }
-    });
+    };
+
+    initializeAuth();
 
     // Listen for changes on auth state
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user ?? null);
+      
       if (session?.user) {
         const { data: profileData, error } = await supabase
           .from('profiles')
@@ -67,15 +87,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .eq('id', session.user.id)
           .single();
         
-        if (error) {
-          console.error('Error fetching profile:', error);
-        } else {
+        if (!error && profileData) {
           setProfile(profileData as Profile);
         }
       } else {
         setProfile(null);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
