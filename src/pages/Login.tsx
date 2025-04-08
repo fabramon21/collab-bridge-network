@@ -1,10 +1,11 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Form,
   FormControl,
@@ -16,6 +17,8 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { Loader2, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -26,10 +29,21 @@ type LoginValues = z.infer<typeof loginSchema>;
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  const { user, signIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [emailConfirmationNeeded, setEmailConfirmationNeeded] = useState(false);
   const [currentEmail, setCurrentEmail] = useState("");
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      const from = location.state?.from || "/dashboard";
+      navigate(from, { replace: true });
+    }
+  }, [user, navigate, location.state]);
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -42,6 +56,7 @@ const Login = () => {
   const onSubmit = async (values: LoginValues) => {
     try {
       setIsLoading(true);
+      setAuthError(null);
       setCurrentEmail(values.email);
       
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -51,7 +66,7 @@ const Login = () => {
 
       if (error) {
         // Check for specific errors
-        if (error.message === "Email not confirmed") {
+        if (error.message.includes("Email not confirmed")) {
           setEmailConfirmationNeeded(true);
           throw new Error("Please check your email and confirm your account before signing in.");
         }
@@ -63,8 +78,9 @@ const Login = () => {
         description: "Welcome back to InternConnect",
       });
 
-      navigate("/");
+      // Redirect will be handled by the useEffect that watches user state
     } catch (error: any) {
+      setAuthError(error.message);
       toast({
         variant: "destructive",
         title: "Error",
@@ -80,6 +96,7 @@ const Login = () => {
     
     try {
       setIsLoading(true);
+      setAuthError(null);
       
       const { error } = await supabase.auth.resend({
         type: 'signup',
@@ -93,6 +110,7 @@ const Login = () => {
         description: "Please check your inbox and click the link to verify your account.",
       });
     } catch (error: any) {
+      setAuthError(error.message);
       toast({
         variant: "destructive",
         title: "Error",
@@ -113,6 +131,14 @@ const Login = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          {authError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{authError}</AlertDescription>
+            </Alert>
+          )}
+          
           {emailConfirmationNeeded ? (
             <div className="space-y-4">
               <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
@@ -135,7 +161,12 @@ const Login = () => {
                         onClick={handleResendVerification}
                         disabled={isLoading}
                       >
-                        {isLoading ? "Sending..." : "Resend verification email"}
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Sending...
+                          </>
+                        ) : "Resend verification email"}
                       </Button>
                     </div>
                   </div>
@@ -146,6 +177,7 @@ const Login = () => {
                 className="w-full" 
                 onClick={() => {
                   setEmailConfirmationNeeded(false);
+                  setAuthError(null);
                   form.reset();
                 }}
               >
@@ -184,7 +216,12 @@ const Login = () => {
                 />
 
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Signing in..." : "Sign in"}
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Signing in...
+                    </>
+                  ) : "Sign in"}
                 </Button>
               </form>
             </Form>
