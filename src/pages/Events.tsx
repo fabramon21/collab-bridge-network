@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { PageLayout } from '@/components/PageLayout';
 
 // Import types
 type Event = {
@@ -223,109 +224,116 @@ export default function Events() {
 
   const filteredEvents = filterEvents();
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Events</h1>
+  const eventsContent = (
+    <>
+      {tableError && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Database Not Configured</AlertTitle>
+          <AlertDescription>
+            {tableError} Please apply the database migration to enable event functionality.
+          </AlertDescription>
+        </Alert>
+      )}
 
-        {tableError && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Database Not Configured</AlertTitle>
-            <AlertDescription>
-              {tableError} Please apply the database migration to enable event functionality.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <div className="mb-8 flex flex-col md:flex-row gap-4 items-center">
-          <div className="relative w-full md:w-auto flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search events..."
-              className="pl-8"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            <Badge 
-              variant={selectedType === null ? "default" : "outline"} 
-              className="cursor-pointer"
-              onClick={() => setSelectedType(null)}
-            >
-              All
-            </Badge>
-            <Badge 
-              variant={selectedType === 'social' ? "default" : "outline"} 
-              className="cursor-pointer"
-              onClick={() => setSelectedType('social')}
-            >
-              Social
-            </Badge>
-            <Badge 
-              variant={selectedType === 'roommate' ? "default" : "outline"} 
-              className="cursor-pointer"
-              onClick={() => setSelectedType('roommate')}
-            >
-              Roommate
-            </Badge>
-            <Badge 
-              variant={selectedType === 'professional' ? "default" : "outline"} 
-              className="cursor-pointer"
-              onClick={() => setSelectedType('professional')}
-            >
-              Professional
-            </Badge>
-          </div>
+      <div className="mb-8 flex flex-col md:flex-row gap-4 items-center">
+        <div className="relative w-full md:w-auto flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search events..."
+            className="pl-8"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-        
-        <Tabs 
-          value={activeTab} 
-          onValueChange={setActiveTab}
-          className="mb-8"
-        >
-          <TabsList className="grid w-full grid-cols-4 mb-8">
-            <TabsTrigger value="all">All Events</TabsTrigger>
-            <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-            <TabsTrigger value="attending">Attending</TabsTrigger>
-            <TabsTrigger value="interested">Interested</TabsTrigger>
-          </TabsList>
-
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : tableError ? (
-            <div className="text-center py-12 text-muted-foreground">
-              Please apply the database migration to see events.
-            </div>
-          ) : (
-            <TabsContent value={activeTab} className="mt-0">
-              {filteredEvents.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredEvents.map((event) => (
-                    <EventCard
-                      key={event.id}
-                      event={event}
-                      status={getEventStatus(event.id)}
-                      onAttend={() => updateParticipation(event.id, 'attending')}
-                      onInterested={() => updateParticipation(event.id, 'interested')}
-                      onDecline={() => updateParticipation(event.id, 'not_attending')}
-                      isLoading={actionLoading}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  No events found matching your criteria.
-                </div>
-              )}
-            </TabsContent>
-          )}
-        </Tabs>
+        <div className="flex gap-2 flex-wrap">
+          <Badge 
+            variant={selectedType === null ? "default" : "outline"} 
+            className="cursor-pointer"
+            onClick={() => setSelectedType(null)}
+          >
+            All
+          </Badge>
+          <Badge 
+            variant={selectedType === 'social' ? "default" : "outline"} 
+            className="cursor-pointer"
+            onClick={() => setSelectedType('social')}
+          >
+            Social
+          </Badge>
+          <Badge 
+            variant={selectedType === 'roommate' ? "default" : "outline"} 
+            className="cursor-pointer"
+            onClick={() => setSelectedType('roommate')}
+          >
+            Roommate
+          </Badge>
+          <Badge 
+            variant={selectedType === 'professional' ? "default" : "outline"} 
+            className="cursor-pointer"
+            onClick={() => setSelectedType('professional')}
+          >
+            Professional
+          </Badge>
+        </div>
       </div>
-    </div>
+      
+      <Tabs 
+        value={activeTab} 
+        onValueChange={setActiveTab}
+        className="mb-8"
+      >
+        <TabsList className="grid w-full grid-cols-4 mb-8">
+          <TabsTrigger value="all">All Events</TabsTrigger>
+          <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+          <TabsTrigger value="attending">Attending</TabsTrigger>
+          <TabsTrigger value="interested">Interested</TabsTrigger>
+        </TabsList>
+
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : tableError ? (
+          <div className="text-center py-12 text-muted-foreground">
+            Please apply the database migration to see events.
+          </div>
+        ) : (
+          <TabsContent value={activeTab} className="mt-0">
+            {filteredEvents.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredEvents.map((event) => (
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    status={getEventStatus(event.id)}
+                    onAttend={() => updateParticipation(event.id, 'attending')}
+                    onInterested={() => updateParticipation(event.id, 'interested')}
+                    onDecline={() => updateParticipation(event.id, 'not_attending')}
+                    isLoading={actionLoading}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                No events found matching your criteria.
+              </div>
+            )}
+          </TabsContent>
+        )}
+      </Tabs>
+    </>
+  );
+
+  return (
+    <PageLayout 
+      title="Events" 
+      previousPage={{ name: "Network", path: "/network" }}
+      nextPage={{ name: "Messages", path: "/messages" }}
+    >
+      <div className="max-w-6xl mx-auto">
+        {eventsContent}
+      </div>
+    </PageLayout>
   );
 }
-

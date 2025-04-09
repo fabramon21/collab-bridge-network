@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { MessageCircle, Users, Home, Briefcase, PlusCircle, Search, Activity, User, Clock, Heart } from "lucide-react";
-import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { ProfileCard } from "@/components/dashboard/ProfileCard";
 import { FeatureCard } from "@/components/dashboard/FeatureCard";
@@ -9,6 +8,7 @@ import { ProfileTasks } from "@/components/dashboard/ProfileTasks";
 import { NotificationsPanel } from "@/components/dashboard/NotificationsPanel";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageLayout } from "@/components/PageLayout";
 
 const Dashboard = () => {
   const { toast } = useToast();
@@ -106,88 +106,93 @@ const Dashboard = () => {
     });
   };
 
-  return (
+  const dashboardContent = (
     <>
-      <Header />
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="mb-6 flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <div className="flex space-x-3">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex items-center gap-1"
-                onClick={handleSearch}
-              >
-                <Search className="h-4 w-4" />
-                <span>Search</span>
-              </Button>
-              <Button 
-                size="sm" 
-                className="flex items-center gap-1"
-                onClick={handleCreatePost}
-              >
-                <PlusCircle className="h-4 w-4" />
-                <span>Create Post</span>
-              </Button>
-            </div>
-          </div>
-          
-          {/* Statistics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            {stats.map((stat, index) => (
-              <Card key={index} className="shadow-sm">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-1">{stat.title}</p>
-                      <p className="text-2xl font-bold">{stat.value}</p>
-                    </div>
-                    <div className={`${stat.bgColor} p-2 rounded-full`}>
-                      <stat.icon className={`h-6 w-6 ${stat.color}`} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            <div className="lg:col-span-2">
-              <ProfileCard />
-            </div>
-            <div>
-              <NotificationsPanel />
-            </div>
-          </div>
-
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Get Started</h2>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {dashboardItems.map((item, index) => (
-                <FeatureCard
-                  key={index}
-                  title={item.title}
-                  description={item.description}
-                  icon={item.icon}
-                  action={item.action}
-                  color={item.color}
-                  onClick={item.onClick}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="mb-8">
-            <ProfileTasks />
-          </div>
+      <div className="mb-6 flex justify-between items-center">
+        <div className="flex space-x-3">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-1"
+            onClick={handleSearch}
+          >
+            <Search className="h-4 w-4" />
+            <span>Search</span>
+          </Button>
+          <Button 
+            size="sm" 
+            className="flex items-center gap-1"
+            onClick={handleCreatePost}
+          >
+            <PlusCircle className="h-4 w-4" />
+            <span>Create Post</span>
+          </Button>
         </div>
       </div>
+      
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {stats.map((stat, index) => (
+          <Card key={index} className="shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">{stat.title}</p>
+                  <p className="text-2xl font-bold">{stat.value}</p>
+                </div>
+                <div className={`${stat.bgColor} p-2 rounded-full`}>
+                  <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="lg:col-span-2">
+          <ProfileCard />
+        </div>
+        <div>
+          <NotificationsPanel />
+        </div>
+      </div>
+
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Get Started</h2>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {dashboardItems.map((item, index) => (
+            <FeatureCard
+              key={index}
+              title={item.title}
+              description={item.description}
+              icon={item.icon}
+              action={item.action}
+              color={item.color}
+              onClick={item.onClick}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="mb-8">
+        <ProfileTasks />
+      </div>
     </>
+  );
+
+  return (
+    <PageLayout 
+      title="Dashboard" 
+      nextPage={{ name: "Network", path: "/network" }}
+    >
+      <div className="max-w-7xl mx-auto">
+        {dashboardContent}
+      </div>
+    </PageLayout>
   );
 };
 
