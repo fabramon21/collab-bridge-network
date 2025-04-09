@@ -13,8 +13,8 @@ import { Profile } from "@/lib/supabase";
 
 type Connection = {
   id: string;
-  user_id: string;
-  connected_user_id: string;
+  sender_id: string;
+  recipient_id: string;
   status: 'pending' | 'accepted' | 'rejected';
   created_at: string;
   updated_at: string;

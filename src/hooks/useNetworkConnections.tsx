@@ -7,8 +7,8 @@ import { Profile } from "@/lib/supabase";
 
 type Connection = {
   id: string;
-  user_id: string;
-  connected_user_id: string;
+  sender_id: string;
+  recipient_id: string;
   status: 'pending' | 'accepted' | 'rejected';
   created_at: string;
   updated_at: string;
@@ -47,7 +47,7 @@ export const useNetworkConnections = () => {
     
     setLoading(true);
     try {
-      // Check if connections table exists
+      // Check if connections table exists with proper structure
       const { error: tableCheckError } = await supabase
         .from('connections')
         .select('id')
@@ -65,7 +65,7 @@ export const useNetworkConnections = () => {
       const { data: acceptedConnections, error: acceptedError } = await supabase
         .from('connections')
         .select('*')
-        .or(`user_id.eq.${user.id},connected_user_id.eq.${user.id}`)
+        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
         .eq('status', 'accepted');
         
       if (acceptedError) throw acceptedError;
@@ -74,7 +74,7 @@ export const useNetworkConnections = () => {
       const { data: pendingConnections, error: pendingError } = await supabase
         .from('connections')
         .select('*')
-        .eq('connected_user_id', user.id)
+        .eq('recipient_id', user.id)
         .eq('status', 'pending');
         
       if (pendingError) throw pendingError;
@@ -83,9 +83,9 @@ export const useNetworkConnections = () => {
       if (acceptedConnections) {
         const enhancedConnections = await Promise.all(
           acceptedConnections.map(async (connection) => {
-            const profileId = connection.user_id === user.id 
-              ? connection.connected_user_id 
-              : connection.user_id;
+            const profileId = connection.sender_id === user.id 
+              ? connection.recipient_id 
+              : connection.sender_id;
               
             const { data: profile } = await supabase
               .from('profiles')
@@ -107,7 +107,7 @@ export const useNetworkConnections = () => {
             const { data: profile } = await supabase
               .from('profiles')
               .select('*')
-              .eq('id', connection.user_id)
+              .eq('id', connection.sender_id)
               .single();
               
             return { ...connection, profile };
@@ -135,16 +135,16 @@ export const useNetworkConnections = () => {
       // Get all existing connection IDs (both accepted and pending)
       const { data: existingConnections } = await supabase
         .from('connections')
-        .select('connected_user_id, user_id')
-        .or(`user_id.eq.${user.id},connected_user_id.eq.${user.id}`);
+        .select('recipient_id, sender_id')
+        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`);
         
       // Extract IDs to exclude from suggestions
       const excludeIds = new Set<string>();
       excludeIds.add(user.id); // Exclude current user
       
       existingConnections?.forEach(conn => {
-        excludeIds.add(conn.user_id);
-        excludeIds.add(conn.connected_user_id);
+        excludeIds.add(conn.sender_id);
+        excludeIds.add(conn.recipient_id);
       });
       
       // Get profiles not in existing connections
@@ -197,7 +197,7 @@ export const useNetworkConnections = () => {
       const { data: existingConn } = await supabase
         .from('connections')
         .select('*')
-        .or(`and(user_id.eq.${user.id},connected_user_id.eq.${profileId}),and(user_id.eq.${profileId},connected_user_id.eq.${user.id})`)
+        .or(`and(sender_id.eq.${user.id},recipient_id.eq.${profileId}),and(sender_id.eq.${profileId},recipient_id.eq.${user.id})`)
         .single();
         
       if (existingConn) {
@@ -215,8 +215,8 @@ export const useNetworkConnections = () => {
       const { error } = await supabase
         .from('connections')
         .insert({
-          user_id: user.id,
-          connected_user_id: profileId,
+          sender_id: user.id,
+          recipient_id: profileId,
           status: 'pending'
         });
         
