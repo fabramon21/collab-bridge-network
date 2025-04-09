@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 // Import types
 type Event = {
@@ -44,6 +46,7 @@ export default function Events() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [tableError, setTableError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -62,8 +65,20 @@ export default function Events() {
         .select('*')
         .order('start_time', { ascending: true });
 
-      if (error) throw error;
-      setEvents(data || []);
+      if (error) {
+        // Check if it's a relation does not exist error (table not created yet)
+        if (error.message.includes('relation') && error.message.includes('does not exist')) {
+          setTableError('The events feature is not fully set up yet. Please apply the database migrations first.');
+        } else {
+          toast({
+            title: 'Error',
+            description: 'Failed to fetch events',
+            variant: 'destructive',
+          });
+        }
+      } else {
+        setEvents(data || []);
+      }
     } catch (error) {
       toast({
         title: 'Error',
@@ -84,19 +99,35 @@ export default function Events() {
         .select('*')
         .eq('user_id', user.id);
 
-      if (error) throw error;
-      setParticipants(data || []);
+      if (error) {
+        // Only set toast for errors other than missing table
+        if (!error.message.includes('relation') || !error.message.includes('does not exist')) {
+          toast({
+            title: 'Error',
+            description: 'Failed to fetch participation status',
+            variant: 'destructive',
+          });
+        }
+      } else {
+        setParticipants(data || []);
+      }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch participation status',
-        variant: 'destructive',
-      });
+      // Don't show toast here as it might be because the table doesn't exist yet
+      console.error('Error fetching participants:', error);
     }
   };
 
   const updateParticipation = async (eventId: string, status: 'interested' | 'attending' | 'not_attending') => {
     if (!user) return;
+
+    if (tableError) {
+      toast({
+        title: 'Error',
+        description: 'Cannot update participation - database tables are not set up',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setActionLoading(true);
     try {
@@ -197,6 +228,16 @@ export default function Events() {
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">Events</h1>
 
+        {tableError && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Database Not Configured</AlertTitle>
+            <AlertDescription>
+              {tableError} Please apply the database migration to enable event functionality.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="mb-8 flex flex-col md:flex-row gap-4 items-center">
           <div className="relative w-full md:w-auto flex-1">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -255,6 +296,10 @@ export default function Events() {
             <div className="flex justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
+          ) : tableError ? (
+            <div className="text-center py-12 text-muted-foreground">
+              Please apply the database migration to see events.
+            </div>
           ) : (
             <TabsContent value={activeTab} className="mt-0">
               {filteredEvents.length > 0 ? (
@@ -283,3 +328,4 @@ export default function Events() {
     </div>
   );
 }
+
