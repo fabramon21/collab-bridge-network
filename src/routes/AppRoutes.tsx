@@ -10,6 +10,7 @@ import Network from "../pages/Network";
 import Profile from "../pages/Profile";
 import Events from "../pages/Events";
 import HousingPage from "../pages/HousingPage";
+import Discussions from "../pages/Discussions";
 
 
 const AppRoutes = () => {
@@ -63,6 +64,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <HousingPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/discussions"
+        element={
+          <ProtectedRoute>
+            <Discussions />
           </ProtectedRoute>
         }
       />

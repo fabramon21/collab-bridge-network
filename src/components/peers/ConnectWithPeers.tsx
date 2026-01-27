@@ -27,6 +27,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Search, MapPin, Briefcase, GraduationCap, Clock, UserRoundPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Button as ToggleButton } from "@/components/ui/button";
 
 interface Profile {
   id: string;
@@ -56,6 +57,11 @@ export const ConnectWithPeers = () => {
   const [search, setSearch] = useState("");
   const [universityFilter, setUniversityFilter] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
+  const [myProfile, setMyProfile] = useState<Profile | null>(null);
+  const [onlySameSchool, setOnlySameSchool] = useState(false);
+  const [onlySameLocation, setOnlySameLocation] = useState(false);
+  const [onlySharedSkills, setOnlySharedSkills] = useState(false);
+  const [sortByMatch, setSortByMatch] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -64,6 +70,13 @@ export const ConnectWithPeers = () => {
       if (!user) return;
       
       try {
+        const { data: myData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (myData) setMyProfile(myData as Profile);
+
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('*')
@@ -83,6 +96,15 @@ export const ConnectWithPeers = () => {
         setConnections(connectionsData || []);
       } catch (error) {
         console.error('Error fetching data:', error);
+        const message =
+          error && typeof error === "object" && "message" in error
+            ? (error as any).message
+            : "Unable to load peers right now.";
+        toast({
+          title: "Failed to fetch connections",
+          description: message,
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
@@ -113,9 +135,56 @@ export const ConnectWithPeers = () => {
     if (locationFilter) {
       results = results.filter(profile => profile.location === locationFilter);
     }
-    
-    setFilteredProfiles(results);
-  }, [search, universityFilter, locationFilter, profiles]);
+    if (onlySameSchool && myProfile?.university) {
+      results = results.filter((p) => p.university === myProfile.university);
+    }
+    if (onlySameLocation && myProfile?.location) {
+      results = results.filter((p) => p.location === myProfile.location);
+    }
+    if (onlySharedSkills && myProfile?.skills) {
+      results = results.filter((p) =>
+        (p.skills || []).some((s) => myProfile.skills?.includes(s))
+      );
+    }
+
+    const withScores = results.map((p) => ({
+      ...p,
+      _score: computeMatchScore(p),
+      _sharedSkills: sharedArray(p.skills, myProfile?.skills),
+      _sharedInterests: sharedArray(p.interests, myProfile?.interests),
+    }));
+
+    const sorted = sortByMatch
+      ? withScores.sort((a, b) => b._score - a._score)
+      : withScores;
+
+    setFilteredProfiles(sorted);
+  }, [
+    search,
+    universityFilter,
+    locationFilter,
+    profiles,
+    onlySameSchool,
+    onlySameLocation,
+    onlySharedSkills,
+    sortByMatch,
+    myProfile,
+  ]);
+
+  const sharedArray = (a?: string[] | null, b?: string[] | null) => {
+    if (!a || !b) return [];
+    return a.filter((item) => b.includes(item));
+  };
+
+  const computeMatchScore = (p: Profile) => {
+    if (!myProfile) return 0;
+    let score = 0;
+    if (p.university && p.university === myProfile.university) score += 3;
+    if (p.location && p.location === myProfile.location) score += 2;
+    score += sharedArray(p.skills, myProfile.skills).length * 1.5;
+    score += sharedArray(p.interests, myProfile.interests).length * 1;
+    return score;
+  };
 
   const getConnectionStatus = (profileId: string) => {
     const connection = connections.find(c => 
@@ -144,17 +213,6 @@ export const ConnectWithPeers = () => {
         
       if (connectionError) throw connectionError;
       
-      const { error: notificationError } = await supabase
-        .from('notifications')
-        .insert({
-          user_id: recipientId,
-          type: 'connection_request',
-          content: `You received a connection request from ${user?.user_metadata?.full_name || 'a user'}`,
-          related_id: user?.id
-        });
-        
-      if (notificationError) throw notificationError;
-      
       const newConnection = {
         id: Date.now().toString(),
         sender_id: user?.id!,
@@ -170,9 +228,13 @@ export const ConnectWithPeers = () => {
       });
     } catch (error) {
       console.error('Error sending connection request:', error);
+      const message =
+        error && typeof error === "object" && "message" in error
+          ? (error as any).message
+          : "Please try again later.";
       toast({
         title: "Error sending request",
-        description: "Please try again later.",
+        description: message,
         variant: "destructive",
       });
     }
@@ -186,17 +248,6 @@ export const ConnectWithPeers = () => {
         .eq('id', connectionId);
         
       if (connectionError) throw connectionError;
-      
-      const { error: notificationError } = await supabase
-        .from('notifications')
-        .insert({
-          user_id: senderId,
-          type: 'connection_request',
-          content: `${user?.user_metadata?.full_name || 'Someone'} accepted your connection request`,
-          related_id: user?.id
-        });
-        
-      if (notificationError) throw notificationError;
       
       setConnections(connections.map(c => 
         c.id === connectionId ? { ...c, status: 'accepted' } : c
@@ -294,6 +345,37 @@ export const ConnectWithPeers = () => {
             </SelectContent>
           </Select>
         </div>
+
+        <div className="flex flex-wrap gap-2 w-full md:w-auto">
+          <ToggleButton
+            variant={sortByMatch ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSortByMatch((v) => !v)}
+          >
+            Best match first
+          </ToggleButton>
+          <ToggleButton
+            variant={onlySameSchool ? "default" : "outline"}
+            size="sm"
+            onClick={() => setOnlySameSchool((v) => !v)}
+          >
+            Same school
+          </ToggleButton>
+          <ToggleButton
+            variant={onlySameLocation ? "default" : "outline"}
+            size="sm"
+            onClick={() => setOnlySameLocation((v) => !v)}
+          >
+            Same city
+          </ToggleButton>
+          <ToggleButton
+            variant={onlySharedSkills ? "default" : "outline"}
+            size="sm"
+            onClick={() => setOnlySharedSkills((v) => !v)}
+          >
+            Shared skills
+          </ToggleButton>
+        </div>
       </div>
       
       {loading ? (
@@ -369,6 +451,18 @@ export const ConnectWithPeers = () => {
                       {profile.bio && (
                         <p className="text-sm mt-2 line-clamp-2">{profile.bio}</p>
                       )}
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {sharedArray(profile.skills, myProfile?.skills).map((skill, i) => (
+                          <Badge key={`s-${i}`} variant="secondary" className="text-xs">
+                            Shared: {skill}
+                          </Badge>
+                        ))}
+                        {sharedArray(profile.interests, myProfile?.interests).map((intr, i) => (
+                          <Badge key={`i-${i}`} variant="outline" className="text-xs">
+                            Both like {intr}
+                          </Badge>
+                        ))}
+                      </div>
                     </CardContent>
                     <CardFooter>
                       {!connectionStatus && (

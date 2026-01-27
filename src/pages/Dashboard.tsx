@@ -24,6 +24,7 @@ import { PageLayout } from "@/components/PageLayout";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Statistics data (placeholder counts until analytics are wired)
   const stats = [
@@ -74,7 +75,7 @@ const Dashboard = () => {
       icon: MessageCircle,
       action: "View Discussions",
       color: "bg-green-100",
-      onClick: () => navigate("/messages"),
+      onClick: () => navigate("/discussions"),
     },
     {
       title: "Housing Options",
