@@ -785,7 +785,7 @@ export const HousingListings = () => {
                       View Details
                     </Button>
                     <Button
-                      onClick={() => {
+                      onClick={async () => {
                         if (!user) {
                           toast({
                             title: "Sign in required",
@@ -794,6 +794,17 @@ export const HousingListings = () => {
                             variant: "destructive",
                           });
                           return;
+                        }
+
+                        try {
+                          await supabase.from("notifications").insert({
+                            user_id: listing.owner_id,
+                            type: "housing_contact",
+                            content: `${user.user_metadata?.full_name || "Someone"} reached out about "${listing.title}"`,
+                            related_id: listing.id,
+                          });
+                        } catch (err) {
+                          console.error("Error creating housing contact notification:", err);
                         }
 
                         toast({

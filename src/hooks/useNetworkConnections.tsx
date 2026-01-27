@@ -256,15 +256,33 @@ export const useNetworkConnections = () => {
     
     setActionLoading(true);
     try {
-      const { error } = await supabase
+      const { data: updatedConnection, error } = await supabase
         .from('connections')
         .update({ 
           status: accept ? 'accepted' : 'rejected' 
         })
-        .eq('id', connectionId);
+        .eq('id', connectionId)
+        .select('*')
+        .single();
         
       if (error) throw error;
       
+      if (accept && updatedConnection) {
+        // Notify the original sender that their request was accepted
+        const { error: notificationError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: updatedConnection.sender_id,
+            type: 'connection_accepted',
+            content: 'Your connection request was accepted',
+            related_id: updatedConnection.recipient_id,
+          });
+
+        if (notificationError) {
+          console.error('Error creating acceptance notification:', notificationError);
+        }
+      }
+
       toast({
         title: 'Success',
         description: accept 

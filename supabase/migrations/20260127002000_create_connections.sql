@@ -9,23 +9,27 @@ create table if not exists public.connections (
 
 alter table public.connections enable row level security;
 
-create policy if not exists "connections_select_auth"
+drop policy if exists "connections_select_auth" on public.connections;
+create policy "connections_select_auth"
 on public.connections for select
 to authenticated
 using (true);
 
-create policy if not exists "connections_insert_self"
+drop policy if exists "connections_insert_self" on public.connections;
+create policy "connections_insert_self"
 on public.connections for insert
 to authenticated
 with check (sender_id = auth.uid());
 
-create policy if not exists "connections_update_self"
+drop policy if exists "connections_update_self" on public.connections;
+create policy "connections_update_self"
 on public.connections for update
 to authenticated
 using (sender_id = auth.uid() or recipient_id = auth.uid())
 with check (sender_id = auth.uid() or recipient_id = auth.uid());
 
-create policy if not exists "connections_delete_self"
+drop policy if exists "connections_delete_self" on public.connections;
+create policy "connections_delete_self"
 on public.connections for delete
 to authenticated
 using (sender_id = auth.uid() or recipient_id = auth.uid());

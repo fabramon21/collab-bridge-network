@@ -1,5 +1,5 @@
 // src/pages/Dashboard.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   MessageCircle,
@@ -21,10 +21,50 @@ import { NotificationsPanel } from "@/components/dashboard/NotificationsPanel";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageLayout } from "@/components/PageLayout";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  const [newConnectionsCount, setNewConnectionsCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setNewConnectionsCount(null);
+      return;
+    }
+
+    const fetchNewConnections = async () => {
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+      try {
+        const { data, error } = await supabase
+          .from("connections")
+          .select("id, status, sender_id, recipient_id, updated_at, created_at")
+          .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+          .eq("status", "accepted")
+          .gte("updated_at", oneWeekAgo.toISOString());
+
+        if (error) throw error;
+
+        setNewConnectionsCount((data || []).length);
+      } catch (err) {
+        console.error("Error fetching new connections count", err);
+        setNewConnectionsCount(null);
+        toast({
+          title: "Couldn't load connections",
+          description: "We couldn't update your new connections stat.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchNewConnections();
+  }, [user, toast]);
 
   // Statistics data (placeholder counts until analytics are wired)
   const stats = [
@@ -51,10 +91,10 @@ const Dashboard = () => {
     },
     {
       title: "New Connections",
-      value: "—",
       icon: Heart,
       color: "text-rose-500",
       bgColor: "bg-rose-100",
+      value: newConnectionsCount !== null ? newConnectionsCount : "—",
     },
   ];
 

@@ -11,18 +11,22 @@ create table if not exists public.discussions_rooms (
 
 alter table public.discussions_rooms enable row level security;
 
+drop policy if exists "rooms_select_auth" on public.discussions_rooms;
 create policy "rooms_select_auth" on public.discussions_rooms
 for select to authenticated using (true);
 
+drop policy if exists "rooms_insert_self" on public.discussions_rooms;
 create policy "rooms_insert_self" on public.discussions_rooms
 for insert to authenticated
 with check (created_by = auth.uid());
 
+drop policy if exists "rooms_update_self" on public.discussions_rooms;
 create policy "rooms_update_self" on public.discussions_rooms
 for update to authenticated
 using (created_by = auth.uid())
 with check (created_by = auth.uid());
 
+drop policy if exists "rooms_delete_self" on public.discussions_rooms;
 create policy "rooms_delete_self" on public.discussions_rooms
 for delete to authenticated
 using (created_by = auth.uid());
@@ -41,18 +45,22 @@ create table if not exists public.discussions_messages (
 
 alter table public.discussions_messages enable row level security;
 
+drop policy if exists "messages_select_auth" on public.discussions_messages;
 create policy "messages_select_auth" on public.discussions_messages
 for select to authenticated using (true);
 
+drop policy if exists "messages_insert_self" on public.discussions_messages;
 create policy "messages_insert_self" on public.discussions_messages
 for insert to authenticated
 with check (sender_id = auth.uid());
 
+drop policy if exists "messages_update_self" on public.discussions_messages;
 create policy "messages_update_self" on public.discussions_messages
 for update to authenticated
 using (sender_id = auth.uid())
 with check (sender_id = auth.uid());
 
+drop policy if exists "messages_delete_self" on public.discussions_messages;
 create policy "messages_delete_self" on public.discussions_messages
 for delete to authenticated
 using (sender_id = auth.uid());

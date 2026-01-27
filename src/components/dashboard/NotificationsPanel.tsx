@@ -19,22 +19,16 @@ export const NotificationsPanel = () => {
   const [loading, setLoading] = useState(true);
   const [notConfigured, setNotConfigured] = useState(false);
   const { user } = useAuth();
+  // Default to enabled; only disable if explicitly set to "false"
   const notificationsEnabled =
-    import.meta.env.VITE_ENABLE_NOTIFICATIONS === "true";
+    import.meta.env.VITE_ENABLE_NOTIFICATIONS !== "false";
 
   useEffect(() => {
     const fetchNotifications = async () => {
-      // Feature flag to avoid hitting a missing table in this Supabase project.
-      if (!notificationsEnabled) {
-        setNotConfigured(true);
-        setLoading(false);
-        return;
-      }
-
       if (!user) return;
       
       try {
-        const { data, error } = await supabase
+        const { data, error, status } = await supabase
           .from('notifications')
           .select('*')
           .eq('user_id', user.id)
@@ -42,8 +36,9 @@ export const NotificationsPanel = () => {
           .limit(5);
           
         if (error) {
-          // PGRST205 / 404 => table missing in this Supabase project.
-          if ((error as any).code === 'PGRST205') {
+          // Treat missing table as "not configured" across possible PostgREST codes/statuses
+          const code = (error as any)?.code;
+          if (status === 404 || code === 'PGRST205' || code === 'PGRST116') {
             setNotConfigured(true);
             setNotifications([]);
             return;
@@ -163,9 +158,14 @@ export const NotificationsPanel = () => {
             </div>
           ))
         ) : notConfigured ? (
-          <p className="text-gray-500 text-center py-4">
-            Notifications are not configured for this Supabase project.
-          </p>
+          <div className="text-center py-4 space-y-2">
+            <p className="text-gray-600 font-medium">
+              Notifications table not found.
+            </p>
+            <p className="text-gray-500 text-sm">
+              Run <code className="bg-gray-100 px-1 rounded">supabase db push</code> and restart the app to enable notifications.
+            </p>
+          </div>
         ) : notifications.length > 0 ? (
           notifications.map((notification) => (
             <div 
