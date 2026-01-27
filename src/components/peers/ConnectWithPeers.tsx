@@ -260,12 +260,15 @@ export const ConnectWithPeers = () => {
             />
           </div>
           
-          <Select value={universityFilter} onValueChange={setUniversityFilter}>
+          <Select 
+            value={universityFilter || "all"} 
+            onValueChange={(value) => setUniversityFilter(value === "all" ? "" : value)}
+          >
             <SelectTrigger className="w-full sm:w-44">
               <SelectValue placeholder="University" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Universities</SelectItem>
+              <SelectItem value="all">All Universities</SelectItem>
               {getUniqueUniversities().map((university) => (
                 <SelectItem key={university} value={university!}>
                   {university}
@@ -274,12 +277,15 @@ export const ConnectWithPeers = () => {
             </SelectContent>
           </Select>
           
-          <Select value={locationFilter} onValueChange={setLocationFilter}>
+          <Select 
+            value={locationFilter || "all"} 
+            onValueChange={(value) => setLocationFilter(value === "all" ? "" : value)}
+          >
             <SelectTrigger className="w-full sm:w-44">
               <SelectValue placeholder="Location" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Locations</SelectItem>
+              <SelectItem value="all">All Locations</SelectItem>
               {getUniqueLocations().map((location) => (
                 <SelectItem key={location} value={location!}>
                   {location}

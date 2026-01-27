@@ -9,6 +9,8 @@ import Messages from "../pages/Messages";
 import Network from "../pages/Network";
 import Profile from "../pages/Profile";
 import Events from "../pages/Events";
+import HousingPage from "../pages/HousingPage";
+
 
 const AppRoutes = () => {
   return (
@@ -53,6 +55,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Events />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/housing"
+        element={
+          <ProtectedRoute>
+            <HousingPage />
           </ProtectedRoute>
         }
       />

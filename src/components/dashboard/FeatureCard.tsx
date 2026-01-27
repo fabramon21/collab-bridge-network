@@ -1,5 +1,12 @@
-
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+// src/components/dashboard/FeatureCard.tsx
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LucideIcon } from "lucide-react";
 
@@ -12,13 +19,13 @@ interface FeatureCardProps {
   onClick?: () => void;
 }
 
-export const FeatureCard = ({ 
-  title, 
-  description, 
-  icon: Icon, 
-  action, 
+export const FeatureCard = ({
+  title,
+  description,
+  icon: Icon,
+  action,
   color,
-  onClick 
+  onClick,
 }: FeatureCardProps) => {
   return (
     <Card className="border border-gray-200 transition-all hover:shadow-md h-full flex flex-col">
@@ -32,11 +39,7 @@ export const FeatureCard = ({
         <CardDescription>{description}</CardDescription>
       </CardContent>
       <CardFooter>
-        <Button 
-          variant="outline" 
-          className="w-full"
-          onClick={onClick}
-        >
+        <Button variant="outline" className="w-full" onClick={onClick}>
           {action}
         </Button>
       </CardFooter>

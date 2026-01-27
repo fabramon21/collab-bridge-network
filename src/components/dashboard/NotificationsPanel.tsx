@@ -17,10 +17,20 @@ interface Notification {
 export const NotificationsPanel = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [notConfigured, setNotConfigured] = useState(false);
   const { user } = useAuth();
+  const notificationsEnabled =
+    import.meta.env.VITE_ENABLE_NOTIFICATIONS === "true";
 
   useEffect(() => {
     const fetchNotifications = async () => {
+      // Feature flag to avoid hitting a missing table in this Supabase project.
+      if (!notificationsEnabled) {
+        setNotConfigured(true);
+        setLoading(false);
+        return;
+      }
+
       if (!user) return;
       
       try {
@@ -31,7 +41,15 @@ export const NotificationsPanel = () => {
           .order('created_at', { ascending: false })
           .limit(5);
           
-        if (error) throw error;
+        if (error) {
+          // PGRST205 / 404 => table missing in this Supabase project.
+          if ((error as any).code === 'PGRST205') {
+            setNotConfigured(true);
+            setNotifications([]);
+            return;
+          }
+          throw error;
+        }
         
         setNotifications(data || []);
       } catch (error) {
@@ -43,7 +61,10 @@ export const NotificationsPanel = () => {
     
     fetchNotifications();
     
-    // Subscribe to realtime notifications
+    // Subscribe to realtime notifications only if the table exists
+    if (notConfigured) return;
+    if (!notificationsEnabled) return;
+
     const channel = supabase
       .channel('public:notifications')
       .on('postgres_changes', { 
@@ -71,9 +92,10 @@ export const NotificationsPanel = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, notConfigured]);
 
   const markAsRead = async (notificationId: string) => {
+    if (!notificationsEnabled || notConfigured) return;
     try {
       const { error } = await supabase
         .from('notifications')
@@ -140,6 +162,10 @@ export const NotificationsPanel = () => {
               </div>
             </div>
           ))
+        ) : notConfigured ? (
+          <p className="text-gray-500 text-center py-4">
+            Notifications are not configured for this Supabase project.
+          </p>
         ) : notifications.length > 0 ? (
           notifications.map((notification) => (
             <div 
