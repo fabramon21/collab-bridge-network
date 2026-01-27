@@ -30,6 +30,7 @@ const Dashboard = () => {
   const { user } = useAuth();
 
   const [newConnectionsCount, setNewConnectionsCount] = useState<number | null>(null);
+  const [activeDiscussionsCount, setActiveDiscussionsCount] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -66,6 +67,42 @@ const Dashboard = () => {
     fetchNewConnections();
   }, [user, toast]);
 
+  useEffect(() => {
+    const fetchActiveDiscussions = async () => {
+      if (!user) {
+        setActiveDiscussionsCount(null);
+        return;
+      }
+
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+      try {
+        const { data, error } = await supabase
+          .from("messages")
+          .select("sender_id, receiver_id, created_at")
+          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+          .gte("created_at", oneWeekAgo.toISOString());
+
+        if (error) throw error;
+
+        const partners = new Set<string>();
+        (data || []).forEach((msg) => {
+          const other =
+            msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
+          partners.add(other);
+        });
+
+        setActiveDiscussionsCount(partners.size);
+      } catch (err) {
+        console.error("Error fetching active discussions count", err);
+        setActiveDiscussionsCount(null);
+      }
+    };
+
+    fetchActiveDiscussions();
+  }, [user]);
+
   // Statistics data (placeholder counts until analytics are wired)
   const stats = [
     {
@@ -77,7 +114,7 @@ const Dashboard = () => {
     },
     {
       title: "Active Discussions",
-      value: "—",
+      value: activeDiscussionsCount !== null ? activeDiscussionsCount : "—",
       icon: MessageCircle,
       color: "text-green-500",
       bgColor: "bg-green-100",

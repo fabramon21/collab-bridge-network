@@ -1,5 +1,5 @@
 -- Create messages table
-create table messages (
+create table if not exists messages (
   id uuid default gen_random_uuid() primary key,
   sender_id uuid references profiles(id) on delete cascade not null,
   receiver_id uuid references profiles(id) on delete cascade not null,
@@ -12,14 +12,17 @@ create table messages (
 alter table messages enable row level security;
 
 -- Create policies
+drop policy if exists "Users can view their own messages." on messages;
 create policy "Users can view their own messages."
   on messages for select
   using ( auth.uid() = sender_id or auth.uid() = receiver_id );
 
+drop policy if exists "Users can insert their own messages." on messages;
 create policy "Users can insert their own messages."
   on messages for insert
   with check ( auth.uid() = sender_id );
 
+drop policy if exists "Users can update their own messages." on messages;
 create policy "Users can update their own messages."
   on messages for update
   using ( auth.uid() = sender_id );

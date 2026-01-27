@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -71,6 +72,8 @@ export const HousingListings = () => {
   const [selectedListing, setSelectedListing] = useState<HousingListing | null>(
     null
   );
+  const [contactListing, setContactListing] = useState<HousingListing | null>(null);
+  const [contactMessage, setContactMessage] = useState("");
   const [activeImageIndex, setActiveImageIndex] = useState<
     Record<string, number>
   >({});
@@ -96,6 +99,7 @@ export const HousingListings = () => {
 
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchListings = async () => {
@@ -785,7 +789,7 @@ export const HousingListings = () => {
                       View Details
                     </Button>
                     <Button
-                      onClick={async () => {
+                      onClick={() => {
                         if (!user) {
                           toast({
                             title: "Sign in required",
@@ -795,23 +799,10 @@ export const HousingListings = () => {
                           });
                           return;
                         }
-
-                        try {
-                          await supabase.from("notifications").insert({
-                            user_id: listing.owner_id,
-                            type: "housing_contact",
-                            content: `${user.user_metadata?.full_name || "Someone"} reached out about "${listing.title}"`,
-                            related_id: listing.id,
-                          });
-                        } catch (err) {
-                          console.error("Error creating housing contact notification:", err);
-                        }
-
-                        toast({
-                          title: "Contact info sent",
-                          description:
-                            "The owner will be in touch with you soon.",
-                        });
+                        setContactListing(listing);
+                        setContactMessage(
+                          `Hi! I'm interested in your listing "${listing.title}". Is it still available?`
+                        );
                       }}
                     >
                       Contact
@@ -938,6 +929,88 @@ export const HousingListings = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Quick message dialog when contacting a listing owner */}
+      <Dialog open={!!contactListing} onOpenChange={() => setContactListing(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Send a message</DialogTitle>
+            <DialogDescription>
+              Message {contactListing?.owner?.full_name || "the owner"} about "{contactListing?.title}"
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Textarea
+              value={contactMessage}
+              onChange={(e) => setContactMessage(e.target.value)}
+              rows={4}
+              placeholder="Type your message..."
+            />
+          </div>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setContactListing(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!user || !contactListing) {
+                  toast({
+                    title: "Sign in required",
+                    description: "Please sign in to contact this listing's owner",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                const trimmed = contactMessage.trim();
+                if (!trimmed) {
+                  toast({
+                    title: "Message is empty",
+                    description: "Type a quick note before sending.",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                try {
+                  // Save chat message
+                  await supabase.from("messages").insert({
+                    sender_id: user.id,
+                    receiver_id: contactListing.owner_id,
+                    content: trimmed,
+                  });
+
+                  // Notify owner (separate from housing contact toast)
+                  await supabase.from("notifications").insert({
+                    user_id: contactListing.owner_id,
+                    type: "housing_contact",
+                    content: `${user.user_metadata?.full_name || "Someone"} messaged you about "${contactListing.title}"`,
+                    related_id: contactListing.id,
+                  });
+
+                  toast({
+                    title: "Message sent",
+                    description: "We opened your chat so you can continue the conversation.",
+                  });
+
+                  setContactListing(null);
+                  setContactMessage("");
+                  navigate("/messages");
+                } catch (error) {
+                  console.error("Error sending housing message:", error);
+                  toast({
+                    title: "Couldn't send message",
+                    description: "Please try again in a moment.",
+                    variant: "destructive",
+                  });
+                }
+              }}
+            >
+              Send & Open Chat
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
