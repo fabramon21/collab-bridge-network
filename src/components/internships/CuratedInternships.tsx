@@ -15,11 +15,19 @@ type Listing = {
   active?: boolean;
 };
 
-const SOURCE_URL =
-  "https://raw.githubusercontent.com/SimplifyJobs/Summer2026-Internships/dev/.github/scripts/listings.json";
+const SOURCES = [
+  {
+    label: "Summer 2026 Internships",
+    url: "https://raw.githubusercontent.com/SimplifyJobs/Summer2026-Internships/dev/.github/scripts/listings.json",
+  },
+  {
+    label: "New Grad Positions",
+    url: "https://raw.githubusercontent.com/SimplifyJobs/New-Grad-Positions/dev/.github/scripts/listings.json",
+  },
+];
 
 export const CuratedInternships = () => {
-  const [listings, setListings] = useState<Listing[]>([]);
+  const [listings, setListings] = useState<(Listing & { source: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,15 +36,29 @@ export const CuratedInternships = () => {
 
     const fetchData = async () => {
       try {
-        const res = await fetch(SOURCE_URL, { signal: controller.signal });
-        if (!res.ok) throw new Error(`GitHub fetch failed (${res.status})`);
-        const data = (await res.json()) as Listing[];
+        const results = await Promise.all(
+          SOURCES.map(async (src) => {
+            const res = await fetch(src.url, { signal: controller.signal });
+            if (!res.ok)
+              throw new Error(`${src.label} fetch failed (${res.status})`);
+            const data = (await res.json()) as Listing[];
+            return (data || [])
+              .filter((l) => l.active !== false)
+              .map((l) => ({ ...l, source: src.label }));
+          })
+        );
 
-        const filtered = (data || [])
-          .filter((l) => l.active !== false) // default true
-          .slice(0, 25); // keep it lean
+        // Merge, dedupe by company+title+url, and sort newest first by source order
+        const merged = results.flat();
+        const seen = new Set<string>();
+        const unique = merged.filter((item) => {
+          const key = `${item.company_name}|${item.title}|${item.url}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
 
-        setListings(filtered);
+        setListings(unique.slice(0, 50)); // keep it lean
       } catch (err: any) {
         if (err.name === "AbortError") return;
         setError(err.message || "Failed to load internships");
@@ -91,6 +113,9 @@ export const CuratedInternships = () => {
                   </Badge>
                 ))}
                 {item.sponsorship && <Badge variant="outline">Sponsorship</Badge>}
+                <Badge variant="outline" className="uppercase text-[10px] tracking-wide">
+                  {item.source.includes("New Grad") ? "New Grad" : "Intern"}
+                </Badge>
               </div>
             </CardTitle>
           </CardHeader>
