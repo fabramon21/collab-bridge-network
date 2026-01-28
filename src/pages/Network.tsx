@@ -8,6 +8,7 @@ import { useNetworkConnections } from "@/hooks/useNetworkConnections";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Network() {
   const {
@@ -27,18 +28,28 @@ export default function Network() {
   const [activeTab, setActiveTab] = useState('connections');
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const sendMessage = async (recipientId: string) => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to send a message.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       // try recipient_id first
       let { error } = await supabase.from("messages").insert({
-        sender_id: supabase.auth.getUser().data?.user?.id,
+        sender_id: user.id,
         recipient_id: recipientId,
         content: "Hi! Thanks for connecting – want to chat?",
       });
       if (error && typeof error.message === "string" && error.message.toLowerCase().includes("recipient_id")) {
         const retry = await supabase.from("messages").insert({
-          sender_id: supabase.auth.getUser().data?.user?.id,
+          sender_id: user.id,
           receiver_id: recipientId,
           content: "Hi! Thanks for connecting – want to chat?",
         });
