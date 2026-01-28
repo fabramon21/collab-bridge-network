@@ -4,9 +4,94 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageLayout } from "@/components/PageLayout";
 import { CuratedInternships } from "@/components/internships/CuratedInternships";
 import { Megaphone, Newspaper } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const Internships = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const [isPostOpen, setIsPostOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [location, setLocation] = useState("Remote");
+  const [applyUrl, setApplyUrl] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to post an opportunity.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!title.trim() || !description.trim()) {
+      toast({
+        title: "Missing info",
+        description: "Title and description are required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const now = new Date();
+      const end = new Date();
+      end.setDate(end.getDate() + 30); // keep it visible ~1 month
+
+      const body = {
+        title: title.trim(),
+        description: `${description.trim()}${applyUrl ? `\n\nApply: ${applyUrl.trim()}` : ""}`,
+        event_type: "professional",
+        location: location.trim() || "Remote",
+        start_time: now.toISOString(),
+        end_time: end.toISOString(),
+        max_participants: null,
+        creator_id: user.id,
+      };
+
+      const { error } = await supabase.from("events").insert(body);
+      if (error) throw error;
+
+      toast({
+        title: "Posted",
+        description: "Your opportunity is live on the board.",
+      });
+      setIsPostOpen(false);
+      setTitle("");
+      setDescription("");
+      setLocation("Remote");
+      setApplyUrl("");
+      navigate("/events");
+    } catch (err) {
+      console.error("Error posting opportunity", err);
+      toast({
+        title: "Could not post",
+        description: "Please try again in a moment.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <PageLayout
@@ -27,9 +112,66 @@ const Internships = () => {
             </CardHeader>
             <CardContent className="flex gap-2">
               <Button onClick={() => navigate("/events")}>Open board</Button>
-              <Button variant="outline" onClick={() => navigate("/events")}>
-                Post an opportunity
-              </Button>
+              <Dialog open={isPostOpen} onOpenChange={setIsPostOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">Post an opportunity</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Post an opportunity</DialogTitle>
+                    <DialogDescription>
+                      Share internships, research gigs, or new grad roles with the community.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="title">Title</Label>
+                      <Input
+                        id="title"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="e.g., Software Engineer Intern @ Acme"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="desc">Description</Label>
+                      <Textarea
+                        id="desc"
+                        rows={4}
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Key details, timeline, what they're looking for..."
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="location">Location</Label>
+                      <Input
+                        id="location"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        placeholder="Remote / City, State"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="apply">Apply link (optional)</Label>
+                      <Input
+                        id="apply"
+                        value={applyUrl}
+                        onChange={(e) => setApplyUrl(e.target.value)}
+                        placeholder="https://..."
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsPostOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleSubmit} disabled={submitting}>
+                      {submitting ? "Posting..." : "Post to board"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
 
