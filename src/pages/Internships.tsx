@@ -128,7 +128,7 @@ const Internships = () => {
     >
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="grid gap-4 md:grid-cols-2">
-          <Card>
+          <Card className="md:col-span-1">
             <CardHeader className="flex flex-row items-start gap-3">
               <Megaphone className="h-6 w-6 text-primary mt-1" />
               <div>
@@ -138,10 +138,10 @@ const Internships = () => {
                 </p>
               </div>
             </CardHeader>
-            <CardContent className="flex gap-2">
+            <CardContent className="space-y-3">
               <Dialog open={isPostOpen} onOpenChange={setIsPostOpen}>
                 <DialogTrigger asChild>
-                  <Button>
+                  <Button className="w-full">
                     <PlusCircle className="h-4 w-4 mr-2" />
                     Post an opportunity
                   </Button>
@@ -210,11 +210,49 @@ const Internships = () => {
                       Cancel
                     </Button>
                     <Button onClick={handleSubmit} disabled={submitting}>
-                      {submitting ? "Posting..." : "Post to board"}
+                      {submitting ? "Posting..." : "Post"}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+
+              <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+                {loadingCommunity ? (
+                  <p className="text-sm text-muted-foreground">Loading...</p>
+                ) : communityItems.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No opportunities yet.</p>
+                ) : (
+                  communityItems.map((item) => (
+                    <Card key={item.id} className="border border-muted">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          {item.title}
+                          {item.role_type && (
+                            <Badge variant="outline" className="uppercase text-[10px]">
+                              {item.role_type}
+                            </Badge>
+                          )}
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                          {item.location || "Remote"} • {new Date(item.created_at).toLocaleDateString()}
+                        </p>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        {item.description && (
+                          <p className="text-sm whitespace-pre-line">{item.description}</p>
+                        )}
+                        {item.apply_url && (
+                          <Button asChild size="sm" variant="secondary">
+                            <a href={item.apply_url} target="_blank" rel="noreferrer">
+                              Apply
+                            </a>
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -232,47 +270,6 @@ const Internships = () => {
               <CuratedInternships />
             </CardContent>
           </Card>
-        </div>
-
-        <div className="space-y-2">
-          <h3 className="text-lg font-semibold">Community submissions</h3>
-          {loadingCommunity ? (
-            <p className="text-sm text-muted-foreground">Loading...</p>
-          ) : communityItems.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No opportunities yet.</p>
-          ) : (
-            <div className="grid gap-3">
-              {communityItems.map((item) => (
-                <Card key={item.id}>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      {item.title}
-                      {item.role_type && (
-                        <Badge variant="outline" className="uppercase text-[10px]">
-                          {item.role_type}
-                        </Badge>
-                      )}
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      {item.location || "Remote"} • {new Date(item.created_at).toLocaleDateString()}
-                    </p>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {item.description && (
-                      <p className="text-sm whitespace-pre-line">{item.description}</p>
-                    )}
-                    {item.apply_url && (
-                      <Button asChild size="sm" variant="secondary">
-                        <a href={item.apply_url} target="_blank" rel="noreferrer">
-                          Apply
-                        </a>
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </PageLayout>
