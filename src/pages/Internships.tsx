@@ -140,9 +140,9 @@ const Internships = () => {
       title="Internship Opportunities"
       previousPage={{ name: "Dashboard", path: "/dashboard" }}
     >
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card className="md:col-span-1">
+      <div className="max-w-5xl mx-auto space-y-5">
+        <div className="grid gap-3 md:grid-cols-5">
+          <Card className="md:col-span-2">
             <CardHeader className="flex flex-row items-start gap-3">
               <Megaphone className="h-6 w-6 text-primary mt-1" />
               <div>
@@ -290,7 +290,7 @@ const Internships = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="md:col-span-3">
             <CardHeader className="flex flex-row items-start gap-3">
               <Newspaper className="h-6 w-6 text-primary mt-1" />
               <div>
