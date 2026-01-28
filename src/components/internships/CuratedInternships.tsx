@@ -119,7 +119,24 @@ export const CuratedInternships = () => {
           return true;
         });
 
-        setListings(unique.slice(0, 50)); // keep it lean but balanced
+        if (unique.length === 0) {
+          // Local fallback to avoid empty state when external sources fail (offline/404).
+          setListings([
+            {
+              company_name: "Example Corp",
+              title: "Software Engineer Intern",
+              url: "#",
+              locations: ["Remote"],
+              terms: ["Summer 2026"],
+              sponsorship: false,
+              notes: "Fallback listing shown because external feeds were unreachable.",
+              active: true,
+              source: "Fallback",
+            },
+          ]);
+        } else {
+          setListings(unique.slice(0, 50)); // keep it lean but balanced
+        }
       } catch (err: any) {
         if (err.name === "AbortError") return;
         setError(err.message || "Failed to load internships");
