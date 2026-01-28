@@ -279,11 +279,21 @@ export const ConnectWithPeers = () => {
       return;
     }
     try {
-      const { error } = await supabase.from("messages").insert({
+      // Attempt with recipient_id (current schema)
+      let { error } = await supabase.from("messages").insert({
         sender_id: user.id,
         recipient_id: recipientId,
         content: "Hi! Thanks for connecting – want to chat?",
       });
+      // If column doesn't exist (older schema), retry with receiver_id
+      if (error && typeof error.message === "string" && error.message.toLowerCase().includes("recipient_id")) {
+        const retry = await supabase.from("messages").insert({
+          sender_id: user.id,
+          receiver_id: recipientId,
+          content: "Hi! Thanks for connecting – want to chat?",
+        });
+        error = retry.error;
+      }
       if (error) throw error;
       toast({
         title: "Message sent",
@@ -294,7 +304,10 @@ export const ConnectWithPeers = () => {
       console.error("Error sending message", err);
       toast({
         title: "Error",
-        description: "Could not send message. Please try again.",
+        description:
+          err && typeof err === "object" && "message" in err
+            ? (err as any).message
+            : "Could not send message. Please try again.",
         variant: "destructive",
       });
     }
