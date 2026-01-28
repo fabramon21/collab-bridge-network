@@ -45,15 +45,15 @@ export const ProfileCard = () => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-      <div className="flex items-center space-x-4">
-        <Avatar className="h-16 w-16">
+    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+      <div className="flex items-center space-x-3">
+        <Avatar className="h-12 w-12">
           <AvatarImage src={profile?.profile_image_url} alt={profile?.full_name} />
           <AvatarFallback className="text-lg">{initials}</AvatarFallback>
         </Avatar>
         <div className="flex-1">
-          <h2 className="text-xl font-bold">{profile?.full_name}</h2>
-          <p className="text-gray-600">{profile?.university || "Add your university"}</p> {/* Changed from school to university */}
+          <h2 className="text-lg font-semibold">{profile?.full_name}</h2>
+          <p className="text-sm text-gray-600">{profile?.university || "Add your university"}</p>
           {profile?.location && <p className="text-gray-600">{profile.location}</p>}
         </div>
         <Button 
@@ -65,7 +65,7 @@ export const ProfileCard = () => {
       </div>
       
       {isEditing && (
-        <div className="mt-4 space-y-4 p-4 border border-gray-200 rounded-md bg-gray-50">
+        <div className="mt-3 space-y-3 p-3 border border-gray-200 rounded-md bg-gray-50">
           <div className="grid gap-2">
             <Label htmlFor="full_name">Full Name</Label>
             <Input 

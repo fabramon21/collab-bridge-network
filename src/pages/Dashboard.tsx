@@ -193,7 +193,12 @@ const Dashboard = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
+      {/* Profile at the top, slimmer */}
+      <div className="mb-3">
+        <ProfileCard />
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
         {stats.map((stat, index) => (
           <Card key={index} className="shadow-sm border">
             <CardContent className="p-2">
@@ -211,12 +216,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-3">
-        <div className="lg:col-span-2">
-          <ProfileCard />
-        </div>
       </div>
 
       <div className="mb-3">
@@ -250,7 +249,7 @@ const Dashboard = () => {
       title="Dashboard"
       nextPage={{ name: "Network", path: "/network" }}
     >
-      <div className="max-w-5xl mx-auto">{dashboardContent}</div>
+      <div className="max-w-6xl mx-auto">{dashboardContent}</div>
     </PageLayout>
   );
 };
