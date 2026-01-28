@@ -17,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { ProfileCard } from "@/components/dashboard/ProfileCard";
 import { FeatureCard } from "@/components/dashboard/FeatureCard";
 import { ProfileTasks } from "@/components/dashboard/ProfileTasks";
-import { NotificationsPanel } from "@/components/dashboard/NotificationsPanel";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageLayout } from "@/components/PageLayout";
@@ -217,9 +216,6 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-2">
           <ProfileCard />
-        </div>
-        <div>
-          <NotificationsPanel />
         </div>
       </div>
 
