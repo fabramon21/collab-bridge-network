@@ -1,5 +1,5 @@
 
-import { Bell, Users, MessageCircle, Briefcase, Home } from "lucide-react";
+import { Bell, Users, MessageCircle, Briefcase, Home, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -144,7 +144,7 @@ export const NotificationsPanel = () => {
         </span>
       </div>
       
-      <div className="space-y-3">
+      <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
         {loading ? (
           Array(3).fill(0).map((_, i) => (
             <div key={i} className="p-3 rounded-md bg-gray-50 animate-pulse">
@@ -171,20 +171,25 @@ export const NotificationsPanel = () => {
             <div 
               key={notification.id}
               className={`p-3 rounded-md ${notification.is_read ? 'bg-gray-50' : 'bg-blue-50 border-l-4 border-blue-500'}`}
-              onClick={() => markAsRead(notification.id)}
-              role="button"
-              tabIndex={0}
             >
-              <div className="flex">
-                <div className="mr-3 mt-1">
-                  {getIcon(notification.type)}
-                </div>
-                <div>
+              <div className="flex items-start gap-3">
+                <div className="mt-1">{getIcon(notification.type)}</div>
+                <div className="flex-1">
                   <p className={`${notification.is_read ? 'text-gray-700' : 'font-medium text-gray-900'}`}>
                     {notification.content}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">{formatDate(notification.created_at)}</p>
                 </div>
+                <button
+                  aria-label="Dismiss notification"
+                  className="text-gray-400 hover:text-gray-600"
+                  onClick={() => {
+                    markAsRead(notification.id);
+                    setNotifications(prev => prev.filter(n => n.id !== notification.id));
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
             </div>
           ))
