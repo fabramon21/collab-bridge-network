@@ -53,22 +53,16 @@ const Internships = () => {
 
     setSubmitting(true);
     try {
-      const now = new Date();
-      const end = new Date();
-      end.setDate(end.getDate() + 30); // keep it visible ~1 month
-
       const body = {
         title: title.trim(),
-        description: `${description.trim()}${applyUrl ? `\n\nApply: ${applyUrl.trim()}` : ""}`,
-        event_type: "professional",
+        description: description.trim(),
         location: location.trim() || "Remote",
-        start_time: now.toISOString(),
-        end_time: end.toISOString(),
-        max_participants: null,
+        apply_url: applyUrl.trim() || null,
+        role_type: "internship",
         creator_id: user.id,
       };
 
-      const { error } = await supabase.from("events").insert(body);
+      const { error } = await supabase.from("opportunities").insert(body);
       if (error) throw error;
 
       toast({
@@ -111,7 +105,7 @@ const Internships = () => {
               </div>
             </CardHeader>
             <CardContent className="flex gap-2">
-              <Button onClick={() => navigate("/events")}>Open board</Button>
+              <Button onClick={() => navigate("/opportunities")}>Open board</Button>
               <Dialog open={isPostOpen} onOpenChange={setIsPostOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline">Post an opportunity</Button>
