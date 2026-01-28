@@ -262,7 +262,7 @@ const Internships = () => {
               <div>
                 <CardTitle>Curated Feed</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Live from Simplify’s Summer 2026 internship tracker. Updated automatically.
+                  Handpicked openings from multiple sources, refreshed regularly.
                 </p>
               </div>
             </CardHeader>
