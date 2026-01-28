@@ -190,14 +190,6 @@ const Dashboard = () => {
             <Search className="h-4 w-4" />
             <span>Search</span>
           </Button>
-          <Button
-            size="sm"
-            className="flex items-center gap-1"
-            onClick={handleCreatePost}
-          >
-            <PlusCircle className="h-4 w-4" />
-            <span>Create Post</span>
-          </Button>
         </div>
       </div>
 
