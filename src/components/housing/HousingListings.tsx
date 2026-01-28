@@ -976,11 +976,24 @@ export const HousingListings = () => {
 
                 try {
                   // Save chat message
-                  await supabase.from("messages").insert({
+                  let { error: msgError } = await supabase.from("messages").insert({
                     sender_id: user.id,
-                    receiver_id: contactListing.owner_id,
+                    recipient_id: contactListing.owner_id,
                     content: trimmed,
                   });
+                  if (
+                    msgError &&
+                    typeof msgError.message === "string" &&
+                    msgError.message.toLowerCase().includes("recipient_id")
+                  ) {
+                    const retry = await supabase.from("messages").insert({
+                      sender_id: user.id,
+                      receiver_id: contactListing.owner_id,
+                      content: trimmed,
+                    });
+                    msgError = retry.error;
+                  }
+                  if (msgError) throw msgError;
 
                   // Notify owner (separate from housing contact toast)
                   await supabase.from("notifications").insert({

@@ -32,6 +32,7 @@ interface NetworkConnectionsProps {
   sendConnectionRequest: (profileId: string) => void;
   respondToRequest: (connectionId: string, accept: boolean) => void;
   searchResults: Profile[];
+  sendMessage: (recipientId: string) => void;
 }
 
 export const NetworkConnections = ({
@@ -44,7 +45,8 @@ export const NetworkConnections = ({
   actionLoading,
   sendConnectionRequest,
   respondToRequest,
-  searchResults
+  searchResults,
+  sendMessage
 }: NetworkConnectionsProps) => {
   return (
     <>
@@ -108,7 +110,7 @@ export const NetworkConnections = ({
                     action={
                       <Button 
                         variant="outline"
-                        onClick={() => {}}
+                        onClick={() => sendMessage(connection.profile?.id || "")}
                         className="w-full"
                       >
                         Message

@@ -17,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { ProfileCard } from "@/components/dashboard/ProfileCard";
 import { FeatureCard } from "@/components/dashboard/FeatureCard";
 import { ProfileTasks } from "@/components/dashboard/ProfileTasks";
-import { NotificationsPanel } from "@/components/dashboard/NotificationsPanel";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageLayout } from "@/components/PageLayout";
@@ -80,8 +79,8 @@ const Dashboard = () => {
       try {
         const { data, error } = await supabase
           .from("messages")
-          .select("sender_id, receiver_id, created_at")
-          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+          .select("sender_id, recipient_id, created_at")
+          .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
           .gte("created_at", oneWeekAgo.toISOString());
 
         if (error) throw error;
@@ -89,7 +88,7 @@ const Dashboard = () => {
         const partners = new Set<string>();
         (data || []).forEach((msg) => {
           const other =
-            msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
+            msg.sender_id === user.id ? msg.recipient_id : msg.sender_id;
           partners.add(other);
         });
 
@@ -217,9 +216,6 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-2">
           <ProfileCard />
-        </div>
-        <div>
-          <NotificationsPanel />
         </div>
       </div>
 

@@ -14,6 +14,11 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
 
 const supa = supabase as any;
 
@@ -48,6 +53,11 @@ interface RoommatePreferencesRow {
 interface MatchResult {
   prefs: RoommatePreferencesRow;
   score: number;
+  profile?: {
+    id: string;
+    full_name: string | null;
+    profile_image_url: string | null;
+  };
 }
 
 const PRIORITY_OPTIONS: { value: PriorityField; label: string }[] = [
@@ -84,6 +94,8 @@ export function RoommatePreferences() {
   const [priorityFields, setPriorityFields] = useState<PriorityField[]>([]);
 
   const [matches, setMatches] = useState<MatchResult[]>([]);
+  const [profilesMap, setProfilesMap] = useState<Record<string, MatchResult["profile"]>>({});
+  const [sendingTo, setSendingTo] = useState<string | null>(null);
 
   useEffect(() => {
     const loadPreferences = async () => {
@@ -325,8 +337,78 @@ export function RoommatePreferences() {
       .sort((a, b) => b.score - a.score)
       .slice(0, 10);
 
+    // Fetch profiles for these matches
+    const ids = scored.map((m) => m.prefs.user_id);
+    if (ids.length > 0) {
+      const { data: profs } = await supa
+        .from("profiles")
+        .select("id, full_name, profile_image_url")
+        .in("id", ids);
+      const map: Record<string, MatchResult["profile"]> = {};
+      (profs || []).forEach((p: any) => {
+        map[p.id] = {
+          id: p.id,
+          full_name: p.full_name,
+          profile_image_url: p.profile_image_url,
+        };
+      });
+      setProfilesMap(map);
+      scored.forEach((m) => (m.profile = map[m.prefs.user_id]));
+    }
+
     setMatches(scored);
     setFindingMatches(false);
+  };
+
+  const sendMessageTo = async (matchUserId: string) => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to message your roommate match.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (matchUserId === user.id) return;
+
+    setSendingTo(matchUserId);
+    try {
+      let { error } = await supa.from("messages").insert({
+        sender_id: user.id,
+        recipient_id: matchUserId,
+        content: "Hi! I saw we’re a top roommate match. Want to chat?",
+      });
+      if (error && typeof error.message === "string" && error.message.toLowerCase().includes("recipient_id")) {
+        const retry = await supa.from("messages").insert({
+          sender_id: user.id,
+          receiver_id: matchUserId,
+          content: "Hi! I saw we’re a top roommate match. Want to chat?",
+        });
+        error = retry.error;
+      }
+      if (error) throw error;
+      toast({
+        title: "Message sent",
+        description: "Check your Messages inbox to continue the chat.",
+      });
+    } catch (err) {
+      console.error("Error sending roommate message", err);
+      const msg =
+        typeof err === "object" && err !== null && "message" in err
+          ? (err as any).message
+          : "Please try again in a moment.";
+      const isMissingTable =
+        typeof msg === "string" && msg.toLowerCase().includes("relation") && msg.toLowerCase().includes("messages");
+      toast({
+        title: "Could not send message",
+        description: isMissingTable
+          ? "Messages table is missing. Run `supabase db push` to apply migrations."
+          : msg,
+        variant: "destructive",
+      });
+    } finally {
+      setSendingTo(null);
+    }
   };
 
   if (!user) {
@@ -577,37 +659,70 @@ export function RoommatePreferences() {
             </p>
           ) : (
             <div className="space-y-3">
-              {matches.map((m) => (
-                <div
-                  key={m.prefs.user_id}
-                  className="border rounded-md p-3 text-sm"
-                >
-                  <div className="flex justify-between mb-1">
-                    <span className="font-medium">
-                      {m.prefs.city || "Unknown location"}
-                    </span>
-                    <span className="text-indigo-600 font-semibold">
-                      {Math.round(m.score)}
-                    </span>
-                  </div>
-                  {m.prefs.budget_min != null &&
-                    m.prefs.budget_max != null && (
-                      <div className="text-xs text-gray-500 mb-1">
-                        Budget: ${m.prefs.budget_min} – ${m.prefs.budget_max}
+              {matches.map((m) => {
+                const prof = m.profile;
+                const name = prof?.full_name || "Roommate match";
+                const initials = name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase();
+                return (
+                  <div
+                    key={m.prefs.user_id}
+                    className="border rounded-md p-3 text-sm"
+                  >
+                    <div className="flex justify-between items-start gap-3 mb-2">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage
+                            src={prof?.profile_image_url || ""}
+                            alt={name}
+                          />
+                          <AvatarFallback>{initials}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{name}</div>
+                          <div className="text-xs text-gray-500">
+                            {m.prefs.city || "Unknown location"}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-indigo-600 font-semibold">
+                        {Math.round(m.score)}
+                      </div>
+                    </div>
+                    {m.prefs.budget_min != null &&
+                      m.prefs.budget_max != null && (
+                        <div className="text-xs text-gray-500 mb-1">
+                          Budget: ${m.prefs.budget_min} – ${m.prefs.budget_max}
+                        </div>
+                      )}
+                    <div className="text-xs text-gray-500">
+                      Sleep: {m.prefs.sleep_schedule || "n/a"} · Cleanliness:{" "}
+                      {m.prefs.cleanliness ?? "n/a"} · Guests:{" "}
+                      {m.prefs.guests || "n/a"}
+                    </div>
+                    {m.prefs.hobbies && m.prefs.hobbies.length > 0 && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        Hobbies: {m.prefs.hobbies.join(", ")}
                       </div>
                     )}
-                  <div className="text-xs text-gray-500">
-                    Sleep: {m.prefs.sleep_schedule || "n/a"} · Cleanliness:{" "}
-                    {m.prefs.cleanliness ?? "n/a"} · Guests:{" "}
-                    {m.prefs.guests || "n/a"}
-                  </div>
-                  {m.prefs.hobbies && m.prefs.hobbies.length > 0 && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      Hobbies: {m.prefs.hobbies.join(", ")}
+                    <div className="flex justify-end mt-3">
+                      <Button
+                        size="sm"
+                        onClick={() => sendMessageTo(m.prefs.user_id)}
+                        disabled={sendingTo === m.prefs.user_id}
+                      >
+                        {sendingTo === m.prefs.user_id
+                          ? "Sending..."
+                          : "Message"}
+                      </Button>
                     </div>
-                  )}
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>
