@@ -170,7 +170,7 @@ const Dashboard = () => {
       icon: Briefcase,
       action: "Browse Opportunities",
       color: "bg-orange-100",
-      onClick: () => navigate("/events"),
+      onClick: () => navigate("/internships"),
     },
   ];
 
