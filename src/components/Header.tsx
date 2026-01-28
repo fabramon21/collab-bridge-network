@@ -106,20 +106,7 @@ export const Header = () => {
                 </Button>
                 {notifOpen && (
                   <div className="absolute right-0 mt-2 w-80 bg-white border rounded-md shadow-lg z-50">
-                    <div className="p-3 border-b font-medium flex justify-between items-center">
-                      <span>Notifications</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          setNotifications((prev) =>
-                            prev.length > 3 ? prev.slice(0, 3) : prev
-                          )
-                        }
-                      >
-                        Show 3
-                      </Button>
-                    </div>
+                    <div className="p-3 border-b font-medium">Notifications</div>
                     <div className="p-3 space-y-2 max-h-64 overflow-y-auto">
                       {notifError ? (
                         <p className="text-sm text-gray-500">{notifError}</p>
