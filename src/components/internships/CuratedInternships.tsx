@@ -148,44 +148,46 @@ export const CuratedInternships = () => {
         </Select>
       </div>
 
-      {filtered.map((item, idx) => (
-        <Card key={`${item.company_name}-${item.title}-${idx}`}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex justify-between items-start gap-2">
-              <span>{item.company_name}</span>
-              <div className="flex flex-wrap gap-1">
-                {item.terms?.map((t) => (
-                  <Badge key={t} variant="secondary">
-                    {t}
+      <div className="max-h-[900px] overflow-y-auto pr-1 space-y-3">
+        {filtered.map((item, idx) => (
+          <Card key={`${item.company_name}-${item.title}-${idx}`}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex justify-between items-start gap-2">
+                <span>{item.company_name}</span>
+                <div className="flex flex-wrap gap-1">
+                  {item.terms?.map((t) => (
+                    <Badge key={t} variant="secondary">
+                      {t}
+                    </Badge>
+                  ))}
+                  {item.sponsorship && <Badge variant="outline">Sponsorship</Badge>}
+                  <Badge variant="outline" className="uppercase text-[10px] tracking-wide">
+                    {item.source.includes("New Grad") ? "New Grad" : "Intern"}
                   </Badge>
-                ))}
-                {item.sponsorship && <Badge variant="outline">Sponsorship</Badge>}
-                <Badge variant="outline" className="uppercase text-[10px] tracking-wide">
-                  {item.source.includes("New Grad") ? "New Grad" : "Intern"}
-                </Badge>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <p className="font-medium">{item.title}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {item.locations?.join(", ") || "Remote / Various"}
+                  </p>
+                  {item.notes && (
+                    <p className="text-xs text-muted-foreground mt-1">{item.notes}</p>
+                  )}
+                </div>
+                <Button asChild size="sm">
+                  <a href={item.url} target="_blank" rel="noreferrer">
+                    Apply
+                  </a>
+                </Button>
               </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div>
-                <p className="font-medium">{item.title}</p>
-                <p className="text-sm text-muted-foreground">
-                  {item.locations?.join(", ") || "Remote / Various"}
-                </p>
-                {item.notes && (
-                  <p className="text-xs text-muted-foreground mt-1">{item.notes}</p>
-                )}
-              </div>
-              <Button asChild size="sm">
-                <a href={item.url} target="_blank" rel="noreferrer">
-                  Apply
-                </a>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 };

@@ -216,7 +216,7 @@ const Internships = () => {
                 </DialogContent>
               </Dialog>
 
-              <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-[900px] overflow-y-auto pr-1">
                 {loadingCommunity ? (
                   <p className="text-sm text-muted-foreground">Loading...</p>
                 ) : communityItems.length === 0 ? (
