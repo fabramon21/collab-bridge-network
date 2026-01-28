@@ -1,9 +1,9 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageLayout } from "@/components/PageLayout";
 import { CuratedInternships } from "@/components/internships/CuratedInternships";
-import { Megaphone, Newspaper } from "lucide-react";
+import { Megaphone, Newspaper, PlusCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,13 +16,23 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
+type Opportunity = {
+  id: string;
+  title: string;
+  description: string | null;
+  location: string | null;
+  apply_url: string | null;
+  role_type: string | null;
+  created_at: string;
+};
+
 const Internships = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -31,7 +41,30 @@ const Internships = () => {
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("Remote");
   const [applyUrl, setApplyUrl] = useState("");
+  const [roleType, setRoleType] = useState("internship");
   const [submitting, setSubmitting] = useState(false);
+  const [communityItems, setCommunityItems] = useState<Opportunity[]>([]);
+  const [loadingCommunity, setLoadingCommunity] = useState(true);
+
+  const fetchCommunity = async () => {
+    setLoadingCommunity(true);
+    try {
+      const { data, error } = await supabase
+        .from("opportunities")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setCommunityItems(data || []);
+    } catch (err) {
+      console.error("Error loading community opportunities", err);
+    } finally {
+      setLoadingCommunity(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) fetchCommunity();
+  }, [user]);
 
   const handleSubmit = async () => {
     if (!user) {
@@ -67,14 +100,15 @@ const Internships = () => {
 
       toast({
         title: "Posted",
-        description: "Your opportunity is live on the board.",
+        description: "Your opportunity is live.",
       });
       setIsPostOpen(false);
       setTitle("");
       setDescription("");
       setLocation("Remote");
       setApplyUrl("");
-      navigate("/events");
+      setRoleType("internship");
+      fetchCommunity();
     } catch (err) {
       console.error("Error posting opportunity", err);
       toast({
@@ -105,10 +139,12 @@ const Internships = () => {
               </div>
             </CardHeader>
             <CardContent className="flex gap-2">
-              <Button onClick={() => navigate("/opportunities")}>Open board</Button>
               <Dialog open={isPostOpen} onOpenChange={setIsPostOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline">Post an opportunity</Button>
+                  <Button>
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Post an opportunity
+                  </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
@@ -155,6 +191,19 @@ const Internships = () => {
                         placeholder="https://..."
                       />
                     </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="role_type">Role type</Label>
+                      <Select value={roleType} onValueChange={setRoleType}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select role type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="internship">Internship</SelectItem>
+                          <SelectItem value="newgrad">New Grad</SelectItem>
+                          <SelectItem value="research">Research</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setIsPostOpen(false)}>
@@ -183,6 +232,47 @@ const Internships = () => {
               <CuratedInternships />
             </CardContent>
           </Card>
+        </div>
+
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold">Community submissions</h3>
+          {loadingCommunity ? (
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          ) : communityItems.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No opportunities yet.</p>
+          ) : (
+            <div className="grid gap-3">
+              {communityItems.map((item) => (
+                <Card key={item.id}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      {item.title}
+                      {item.role_type && (
+                        <Badge variant="outline" className="uppercase text-[10px]">
+                          {item.role_type}
+                        </Badge>
+                      )}
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      {item.location || "Remote"} • {new Date(item.created_at).toLocaleDateString()}
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {item.description && (
+                      <p className="text-sm whitespace-pre-line">{item.description}</p>
+                    )}
+                    {item.apply_url && (
+                      <Button asChild size="sm" variant="secondary">
+                        <a href={item.apply_url} target="_blank" rel="noreferrer">
+                          Apply
+                        </a>
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </PageLayout>

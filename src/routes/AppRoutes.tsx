@@ -12,7 +12,6 @@ import Events from "../pages/Events";
 import HousingPage from "../pages/HousingPage";
 import Discussions from "../pages/Discussions";
 import Internships from "../pages/Internships";
-import Opportunities from "../pages/Opportunities";
 
 
 const AppRoutes = () => {
@@ -82,14 +81,6 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Internships />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/opportunities"
-        element={
-          <ProtectedRoute>
-            <Opportunities />
           </ProtectedRoute>
         }
       />
