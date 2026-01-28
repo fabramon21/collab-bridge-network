@@ -31,7 +31,41 @@ const SOURCES = [
     label: "New Grad Positions",
     url: "https://raw.githubusercontent.com/SimplifyJobs/New-Grad-Positions/dev/.github/scripts/listings.json",
   },
+  {
+    label: "Summer 2026 Community",
+    url: "https://raw.githubusercontent.com/summer2026internships/Summer2026-Internships/dev/.github/scripts/listings.json",
+  },
 ];
+
+const CATEGORIES = [
+  "Software Engineering",
+  "AI, Data Science & Machine Learning",
+  "Product & Business Analytics",
+  "Design & UI/UX",
+  "Marketing & Growth",
+  "Cybersecurity",
+  "Finance & Quant",
+  "Research & Biotech",
+];
+
+const inferCategory = (title: string) => {
+  const t = title.toLowerCase();
+  if (t.includes("data") || t.includes("machine learning") || t.includes("ml") || t.includes("ai"))
+    return "AI, Data Science & Machine Learning";
+  if (t.includes("product") || t.includes("pm") || t.includes("business"))
+    return "Product & Business Analytics";
+  if (t.includes("design") || t.includes("ux") || t.includes("ui"))
+    return "Design & UI/UX";
+  if (t.includes("marketing") || t.includes("growth"))
+    return "Marketing & Growth";
+  if (t.includes("security") || t.includes("cyber"))
+    return "Cybersecurity";
+  if (t.includes("quant") || t.includes("trading") || t.includes("finance"))
+    return "Finance & Quant";
+  if (t.includes("research") || t.includes("bio") || t.includes("biotech"))
+    return "Research & Biotech";
+  return "Software Engineering";
+};
 
 export const CuratedInternships = () => {
   const [listings, setListings] = useState<(Listing & { source: string })[]>([]);
@@ -39,6 +73,7 @@ export const CuratedInternships = () => {
   const [error, setError] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<"all" | "intern" | "newgrad">("all");
   const [sponsorshipFilter, setSponsorshipFilter] = useState<"all" | "yes" | "no">("all");
+  const [categoryFilter, setCategoryFilter] = useState<"all" | string>("all");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -117,6 +152,8 @@ export const CuratedInternships = () => {
 
     if (sponsorshipFilter === "yes" && !item.sponsorship) return false;
     if (sponsorshipFilter === "no" && item.sponsorship) return false;
+    const cat = inferCategory(item.title);
+    if (categoryFilter !== "all" && cat !== categoryFilter) return false;
     return true;
   });
 
@@ -146,6 +183,22 @@ export const CuratedInternships = () => {
             <SelectItem value="no">No sponsorship</SelectItem>
           </SelectContent>
         </Select>
+        <Select
+          value={categoryFilter}
+          onValueChange={(v: any) => setCategoryFilter(v)}
+        >
+          <SelectTrigger className="w-full sm:w-64">
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All categories</SelectItem>
+            {CATEGORIES.map((c) => (
+              <SelectItem key={c} value={c}>
+                {c}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="max-h-[900px] overflow-y-auto pr-1 space-y-3">
@@ -163,6 +216,9 @@ export const CuratedInternships = () => {
                   {item.sponsorship && <Badge variant="outline">Sponsorship</Badge>}
                   <Badge variant="outline" className="uppercase text-[10px] tracking-wide">
                     {item.source.includes("New Grad") ? "New Grad" : "Intern"}
+                  </Badge>
+                  <Badge variant="outline" className="text-[10px]">
+                    {inferCategory(item.title)}
                   </Badge>
                 </div>
               </CardTitle>

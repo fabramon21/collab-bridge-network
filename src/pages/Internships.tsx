@@ -22,6 +22,17 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
+const CATEGORIES = [
+  "Software Engineering",
+  "AI, Data Science & Machine Learning",
+  "Product & Business Analytics",
+  "Design & UI/UX",
+  "Marketing & Growth",
+  "Cybersecurity",
+  "Finance & Quant",
+  "Research & Biotech",
+];
+
 type Opportunity = {
   id: string;
   title: string;
@@ -29,6 +40,7 @@ type Opportunity = {
   location: string | null;
   apply_url: string | null;
   role_type: string | null;
+  category: string | null;
   created_at: string;
 };
 
@@ -42,6 +54,7 @@ const Internships = () => {
   const [location, setLocation] = useState("Remote");
   const [applyUrl, setApplyUrl] = useState("");
   const [roleType, setRoleType] = useState("internship");
+  const [category, setCategory] = useState(CATEGORIES[0]);
   const [submitting, setSubmitting] = useState(false);
   const [communityItems, setCommunityItems] = useState<Opportunity[]>([]);
   const [loadingCommunity, setLoadingCommunity] = useState(true);
@@ -92,6 +105,7 @@ const Internships = () => {
         location: location.trim() || "Remote",
         apply_url: applyUrl.trim() || null,
         role_type: "internship",
+        category,
         creator_id: user.id,
       };
 
@@ -204,6 +218,21 @@ const Internships = () => {
                         </SelectContent>
                       </Select>
                     </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="category">Category</Label>
+                      <Select value={category} onValueChange={setCategory}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CATEGORIES.map((c) => (
+                            <SelectItem key={c} value={c}>
+                              {c}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setIsPostOpen(false)}>
@@ -224,15 +253,20 @@ const Internships = () => {
                 ) : (
                   communityItems.map((item) => (
                     <Card key={item.id} className="border border-muted">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          {item.title}
-                          {item.role_type && (
-                            <Badge variant="outline" className="uppercase text-[10px]">
-                              {item.role_type}
-                            </Badge>
-                          )}
-                        </CardTitle>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        {item.title}
+                        {item.role_type && (
+                          <Badge variant="outline" className="uppercase text-[10px]">
+                            {item.role_type}
+                          </Badge>
+                        )}
+                        {item.category && (
+                          <Badge variant="outline" className="text-[10px]">
+                            {item.category}
+                          </Badge>
+                        )}
+                      </CardTitle>
                         <p className="text-sm text-muted-foreground">
                           {item.location || "Remote"} • {new Date(item.created_at).toLocaleDateString()}
                         </p>
