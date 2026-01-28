@@ -25,15 +25,24 @@ type Listing = {
 const SOURCES = [
   {
     label: "Summer 2026 Internships",
-    url: "https://raw.githubusercontent.com/SimplifyJobs/Summer2026-Internships/dev/.github/scripts/listings.json",
+    urls: [
+      "https://raw.githubusercontent.com/SimplifyJobs/Summer2026-Internships/dev/.github/scripts/listings.json",
+      "https://raw.githubusercontent.com/SimplifyJobs/Summer2026-Internships/main/.github/scripts/listings.json",
+    ],
   },
   {
     label: "New Grad Positions",
-    url: "https://raw.githubusercontent.com/SimplifyJobs/New-Grad-Positions/dev/.github/scripts/listings.json",
+    urls: [
+      "https://raw.githubusercontent.com/SimplifyJobs/New-Grad-Positions/dev/.github/scripts/listings.json",
+      "https://raw.githubusercontent.com/SimplifyJobs/New-Grad-Positions/main/.github/scripts/listings.json",
+    ],
   },
   {
     label: "Summer 2026 Community",
-    url: "https://raw.githubusercontent.com/summer2026internships/Summer2026-Internships/dev/.github/scripts/listings.json",
+    urls: [
+      "https://raw.githubusercontent.com/summer2026internships/Summer2026-Internships/dev/.github/scripts/listings.json",
+      "https://raw.githubusercontent.com/summer2026internships/Summer2026-Internships/main/.github/scripts/listings.json",
+    ],
   },
 ];
 
@@ -82,15 +91,21 @@ export const CuratedInternships = () => {
       try {
         const results = await Promise.all(
           SOURCES.map(async (src) => {
-            const res = await fetch(src.url, { signal: controller.signal });
-            if (!res.ok)
-              throw new Error(`${src.label} fetch failed (${res.status})`);
-            const data = (await res.json()) as Listing[];
-            // take a slice from each source so one feed doesn't dominate
-            return (data || [])
-              .filter((l) => l.active !== false)
-              .slice(0, 25)
-              .map((l) => ({ ...l, source: src.label }));
+            for (const url of src.urls) {
+              try {
+                const res = await fetch(url, { signal: controller.signal });
+                if (!res.ok) throw new Error(`${res.status}`);
+                const data = (await res.json()) as Listing[];
+                return (data || [])
+                  .filter((l) => l.active !== false)
+                  .slice(0, 25)
+                  .map((l) => ({ ...l, source: src.label }));
+              } catch (err) {
+                // try next URL
+              }
+            }
+            console.warn(`Skipping source ${src.label} after trying all URLs`);
+            return [];
           })
         );
 
