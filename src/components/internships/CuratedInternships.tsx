@@ -42,8 +42,10 @@ export const CuratedInternships = () => {
             if (!res.ok)
               throw new Error(`${src.label} fetch failed (${res.status})`);
             const data = (await res.json()) as Listing[];
+            // take a slice from each source so one feed doesn't dominate
             return (data || [])
               .filter((l) => l.active !== false)
+              .slice(0, 25)
               .map((l) => ({ ...l, source: src.label }));
           })
         );
@@ -58,7 +60,7 @@ export const CuratedInternships = () => {
           return true;
         });
 
-        setListings(unique.slice(0, 50)); // keep it lean
+        setListings(unique.slice(0, 50)); // keep it lean but balanced
       } catch (err: any) {
         if (err.name === "AbortError") return;
         setError(err.message || "Failed to load internships");
