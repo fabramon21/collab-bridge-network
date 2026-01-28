@@ -105,25 +105,51 @@ export const Header = () => {
                   </span>
                 </Button>
                 {notifOpen && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white border rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
-                    <div className="p-3 border-b font-medium">Notifications</div>
-                    <div className="p-3 space-y-2">
+                  <div className="absolute right-0 mt-2 w-80 bg-white border rounded-md shadow-lg z-50">
+                    <div className="p-3 border-b font-medium flex justify-between items-center">
+                      <span>Notifications</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setNotifications((prev) =>
+                            prev.length > 3 ? prev.slice(0, 3) : prev
+                          )
+                        }
+                      >
+                        Show 3
+                      </Button>
+                    </div>
+                    <div className="p-3 space-y-2 max-h-64 overflow-y-auto">
                       {notifError ? (
                         <p className="text-sm text-gray-500">{notifError}</p>
                       ) : notifications.length === 0 ? (
                         <p className="text-sm text-gray-500">No notifications</p>
                       ) : (
-                        notifications.map((n) => (
+                        notifications.map((n, idx) => (
                           <div
                             key={n.id}
-                            className={`text-sm border rounded p-2 ${
+                            className={`text-sm border rounded p-2 flex items-start justify-between ${
                               n.is_read ? "bg-gray-50" : "bg-blue-50"
                             }`}
                           >
-                            <div className="font-medium">{n.content}</div>
-                            <div className="text-xs text-gray-500">
-                              {new Date(n.created_at).toLocaleString()}
+                            <div>
+                              <div className="font-medium">{n.content}</div>
+                              <div className="text-xs text-gray-500">
+                                {new Date(n.created_at).toLocaleString()}
+                              </div>
                             </div>
+                            <button
+                              aria-label="Dismiss notification"
+                              className="text-gray-400 hover:text-gray-600 ml-2"
+                              onClick={() =>
+                                setNotifications((prev) =>
+                                  prev.filter((item: any) => item.id !== n.id)
+                                )
+                              }
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
                           </div>
                         ))
                       )}
