@@ -385,9 +385,17 @@ export function RoommatePreferences() {
       });
     } catch (err) {
       console.error("Error sending roommate message", err);
+      const msg =
+        typeof err === "object" && err !== null && "message" in err
+          ? (err as any).message
+          : "Please try again in a moment.";
+      const isMissingTable =
+        typeof msg === "string" && msg.toLowerCase().includes("relation") && msg.toLowerCase().includes("messages");
       toast({
         title: "Could not send message",
-        description: "Please try again in a moment.",
+        description: isMissingTable
+          ? "Messages table is missing. Run `supabase db push` to apply migrations."
+          : msg,
         variant: "destructive",
       });
     } finally {
