@@ -178,8 +178,8 @@ const Dashboard = () => {
 
   const dashboardContent = (
     <>
-      <div className="mb-6 flex justify-between items-center">
-        <div className="flex space-x-3">
+      <div className="mb-2 flex justify-between items-center">
+        <div className="flex space-x-2">
           <Button
             variant="outline"
             size="sm"
@@ -193,19 +193,24 @@ const Dashboard = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      {/* Profile at the top, slimmer */}
+      <div className="mb-3">
+        <ProfileCard />
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
         {stats.map((stat, index) => (
-          <Card key={index} className="shadow-sm">
-            <CardContent className="p-6">
+          <Card key={index} className="shadow-sm border">
+            <CardContent className="p-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
+                  <p className="text-[11px] font-medium text-muted-foreground mb-0.5">
                     {stat.title}
                   </p>
-                  <p className="text-2xl font-bold">{stat.value}</p>
+                  <p className="text-lg font-semibold leading-none">{stat.value}</p>
                 </div>
-                <div className={`${stat.bgColor} p-2 rounded-full`}>
-                  <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                <div className={`${stat.bgColor} p-1.5 rounded-full`}>
+                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
                 </div>
               </div>
             </CardContent>
@@ -213,15 +218,9 @@ const Dashboard = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="lg:col-span-2">
-          <ProfileCard />
-        </div>
-      </div>
-
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">Get Started</h2>
+      <div className="mb-3">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-base font-semibold text-gray-900">Get Started</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -250,7 +249,7 @@ const Dashboard = () => {
       title="Dashboard"
       nextPage={{ name: "Network", path: "/network" }}
     >
-      <div className="max-w-7xl mx-auto">{dashboardContent}</div>
+      <div className="max-w-6xl mx-auto">{dashboardContent}</div>
     </PageLayout>
   );
 };
