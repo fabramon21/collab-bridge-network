@@ -178,7 +178,7 @@ const Dashboard = () => {
 
   const dashboardContent = (
     <>
-      <div className="mb-6 flex justify-between items-center">
+      <div className="mb-4 flex justify-between items-center">
         <div className="flex space-x-3">
           <Button
             variant="outline"
@@ -193,10 +193,10 @@ const Dashboard = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         {stats.map((stat, index) => (
           <Card key={index} className="shadow-sm">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground mb-1">
@@ -213,13 +213,13 @@ const Dashboard = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
         <div className="lg:col-span-2">
           <ProfileCard />
         </div>
       </div>
 
-      <div className="mb-8">
+      <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-900">Get Started</h2>
         </div>
