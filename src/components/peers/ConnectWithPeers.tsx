@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -64,6 +65,7 @@ export const ConnectWithPeers = () => {
   const [sortByMatch, setSortByMatch] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -262,6 +264,37 @@ export const ConnectWithPeers = () => {
       toast({
         title: "Error accepting request",
         description: "Please try again later.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const sendMessage = async (recipientId: string) => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to send a message.",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      const { error } = await supabase.from("messages").insert({
+        sender_id: user.id,
+        recipient_id: recipientId,
+        content: "Hi! Thanks for connecting – want to chat?",
+      });
+      if (error) throw error;
+      toast({
+        title: "Message sent",
+        description: "Opening your inbox...",
+      });
+      navigate("/messages");
+    } catch (err) {
+      console.error("Error sending message", err);
+      toast({
+        title: "Error",
+        description: "Could not send message. Please try again.",
         variant: "destructive",
       });
     }
@@ -500,7 +533,14 @@ export const ConnectWithPeers = () => {
                         </Button>
                       )}
                       {connectionStatus === 'accepted' && (
-                        <Button variant="outline" className="w-full">
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            sendMessage(profile.id);
+                          }}
+                        >
                           Message
                         </Button>
                       )}
@@ -591,7 +631,7 @@ export const ConnectWithPeers = () => {
                         </Button>
                       )}
                       {connectionStatus === 'accepted' && (
-                        <Button className="w-full">
+                        <Button className="w-full" onClick={() => sendMessage(profile.id)}>
                           Send Message
                         </Button>
                       )}
