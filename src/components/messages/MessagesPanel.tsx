@@ -25,7 +25,7 @@ interface Profile {
 interface Message {
   id: string;
   sender_id: string;
-  receiver_id: string;
+  recipient_id: string;
   content: string;
   created_at: string;
   is_read: boolean;
@@ -50,7 +50,7 @@ export const MessagesPanel = () => {
         const { data: messagesData, error: messagesError } = await supabase
           .from('messages')
           .select('*')
-          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+          .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
           .order('created_at', { ascending: false });
           
         if (messagesError) throw messagesError;
@@ -59,7 +59,7 @@ export const MessagesPanel = () => {
         const conversationPartners = new Set<string>();
         messagesData?.forEach(message => {
           if (message.sender_id === user.id) {
-            conversationPartners.add(message.receiver_id);
+            conversationPartners.add(message.recipient_id);
           } else {
             conversationPartners.add(message.sender_id);
           }
@@ -102,7 +102,7 @@ export const MessagesPanel = () => {
         event: 'INSERT', 
         schema: 'public', 
         table: 'messages',
-        filter: `receiver_id=eq.${user?.id}` 
+        filter: `recipient_id=eq.${user?.id}` 
       }, async (payload) => {
         const newMessage = payload.new as Message;
         
@@ -149,7 +149,7 @@ export const MessagesPanel = () => {
         const { data, error } = await supabase
           .from('messages')
           .select('*')
-          .or(`and(sender_id.eq.${user.id},receiver_id.eq.${selectedContact}),and(sender_id.eq.${selectedContact},receiver_id.eq.${user.id})`)
+          .or(`and(sender_id.eq.${user.id},recipient_id.eq.${selectedContact}),and(sender_id.eq.${selectedContact},recipient_id.eq.${user.id})`)
           .order('created_at', { ascending: true });
           
         if (error) throw error;
@@ -158,7 +158,7 @@ export const MessagesPanel = () => {
         
         // Mark unread messages as read
         const unreadMessageIds = data
-          ?.filter(m => m.receiver_id === user.id && !m.is_read)
+          ?.filter(m => m.recipient_id === user.id && !m.is_read)
           .map(m => m.id);
           
         if (unreadMessageIds && unreadMessageIds.length > 0) {
@@ -186,7 +186,7 @@ export const MessagesPanel = () => {
     try {
       const messageData = {
         sender_id: user.id,
-        receiver_id: selectedContact,
+        recipient_id: selectedContact,
         content: newMessage.trim()
       };
       
@@ -266,7 +266,7 @@ export const MessagesPanel = () => {
             <div className="p-2">
               {Object.entries(conversations).map(([id, profile]) => {
                 const unreadCount = messages.filter(
-                  m => m.sender_id === id && m.receiver_id === user?.id && !m.is_read
+                  m => m.sender_id === id && m.recipient_id === user?.id && !m.is_read
                 ).length;
                 
                 const initials = profile.full_name

@@ -375,7 +375,7 @@ export function RoommatePreferences() {
     try {
       const { error } = await supa.from("messages").insert({
         sender_id: user.id,
-        receiver_id: matchUserId,
+        recipient_id: matchUserId,
         content: "Hi! I saw we’re a top roommate match. Want to chat?",
       });
       if (error) throw error;

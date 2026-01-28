@@ -80,8 +80,8 @@ const Dashboard = () => {
       try {
         const { data, error } = await supabase
           .from("messages")
-          .select("sender_id, receiver_id, created_at")
-          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+          .select("sender_id, recipient_id, created_at")
+          .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
           .gte("created_at", oneWeekAgo.toISOString());
 
         if (error) throw error;
@@ -89,7 +89,7 @@ const Dashboard = () => {
         const partners = new Set<string>();
         (data || []).forEach((msg) => {
           const other =
-            msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
+            msg.sender_id === user.id ? msg.recipient_id : msg.sender_id;
           partners.add(other);
         });
 

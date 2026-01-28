@@ -978,7 +978,7 @@ export const HousingListings = () => {
                   // Save chat message
                   await supabase.from("messages").insert({
                     sender_id: user.id,
-                    receiver_id: contactListing.owner_id,
+                    recipient_id: contactListing.owner_id,
                     content: trimmed,
                   });
 
