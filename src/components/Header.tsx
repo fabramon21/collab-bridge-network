@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Bell, Menu, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -22,6 +22,7 @@ export const Header = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifError, setNotifError] = useState<string | null>(null);
+  const notifRef = useRef<HTMLDivElement | null>(null);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -74,6 +75,18 @@ export const Header = () => {
     }
   };
 
+  // Close notifications when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (!notifRef.current) return;
+      if (!notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   return (
     <header className="border-b bg-white sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -97,7 +110,7 @@ export const Header = () => {
               <Button variant="ghost" onClick={() => navigate("/messages")}>
                 Messages
               </Button>
-              <div className="relative">
+              <div className="relative" ref={notifRef}>
                 <Button variant="ghost" className="relative" onClick={openNotifications}>
                   <Bell className="h-5 w-5" />
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
