@@ -1,7 +1,4 @@
-alter table public.opportunities
-add column if not exists category text;
-
--- Subscriptions table for email alerts
+-- Create subscription table for opportunity alerts
 create table if not exists public.opportunity_subscriptions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references public.profiles(id) on delete set null,
@@ -23,3 +20,5 @@ create policy "subs_insert_self"
   on public.opportunity_subscriptions
   for insert
   with check (auth.uid() = user_id or user_id is null);
+
+create index if not exists opportunity_subscriptions_email_idx on public.opportunity_subscriptions(email);
