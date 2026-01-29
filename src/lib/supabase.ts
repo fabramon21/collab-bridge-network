@@ -1,7 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://wikbqrasvmggxbhlwazz.supabase.co";
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpa2JxcmFzdm1nZ3hiaGx3YXp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgwMDMyOTksImV4cCI6MjA1MzU3OTI5OX0.L0lGB_dTO8ANKfUNtWI8Yyip6VYxOTnfldidDkP0-M8";
+const supabaseUrl =
+  import.meta.env.VITE_SUPABASE_URL || "https://zpiihnwkiapprhnqjzkm.supabase.co";
+const supabaseAnonKey =
+  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwaWlobndraWFwcHJobnFqemttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0MDUxNzAsImV4cCI6MjA4NDk4MTE3MH0.pOunWkc7PVZ--qQRd96viEtwnHydGk3pm5D_VGMAz-I";
 
 // Single Supabase client instance with explicit auth configuration
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
