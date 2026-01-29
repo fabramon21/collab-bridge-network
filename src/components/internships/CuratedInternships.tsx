@@ -44,6 +44,13 @@ const SOURCES = [
       "https://raw.githubusercontent.com/summer2026internships/Summer2026-Internships/main/.github/scripts/listings.json",
     ],
   },
+  {
+    label: "Summer 2026 Internships (vanshb03)",
+    urls: [
+      "https://raw.githubusercontent.com/vanshb03/Summer2026-Internships/dev/.github/scripts/listings.json",
+      "https://raw.githubusercontent.com/vanshb03/Summer2026-Internships/main/.github/scripts/listings.json",
+    ],
+  },
 ];
 
 const CATEGORIES = [
