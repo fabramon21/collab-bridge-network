@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const CATEGORIES = [
   "Software Engineering",
@@ -58,6 +59,18 @@ const Internships = () => {
   const [submitting, setSubmitting] = useState(false);
   const [communityItems, setCommunityItems] = useState<Opportunity[]>([]);
   const [loadingCommunity, setLoadingCommunity] = useState(true);
+  const [showSubscribeModal, setShowSubscribeModal] = useState(false);
+  const [subscribeEmail, setSubscribeEmail] = useState("");
+  const [subscribeCats, setSubscribeCats] = useState<string[]>([CATEGORIES[0]]);
+  const [subscribeSubmitting, setSubscribeSubmitting] = useState(false);
+
+  useEffect(() => {
+    const seen = localStorage.getItem("internships_subscribe_prompt_seen");
+    if (!seen || seen === "0") {
+      setSubscribeEmail(user?.email || "");
+      setShowSubscribeModal(true);
+    }
+  }, [user]);
 
   const fetchCommunity = async () => {
     setLoadingCommunity(true);
@@ -99,18 +112,37 @@ const Internships = () => {
 
     setSubmitting(true);
     try {
-      const body = {
+      const base = {
         title: title.trim(),
         description: description.trim(),
         location: location.trim() || "Remote",
         apply_url: applyUrl.trim() || null,
         role_type: "internship",
-        category,
         creator_id: user.id,
       };
 
-      const { error } = await supabase.from("opportunities").insert(body);
+      let { data, error } = await supabase
+        .from("opportunities")
+        .insert({ ...base, category })
+        .select()
+        .single();
+
+      if (error && typeof error.message === "string" && error.message.toLowerCase().includes("category")) {
+        const retry = await supabase.from("opportunities").insert(base).select().single();
+        error = retry.error;
+        data = retry.data;
+      }
+
       if (error) throw error;
+
+      // Trigger edge function to email subscribers (fire-and-forget)
+      if (data) {
+        supabase.functions
+          .invoke("opportunity-email-public", {
+            body: { record: data },
+          })
+          .catch((fnErr) => console.warn("opportunity-email invoke failed", fnErr));
+      }
 
       toast({
         title: "Posted",
@@ -125,13 +157,71 @@ const Internships = () => {
       fetchCommunity();
     } catch (err) {
       console.error("Error posting opportunity", err);
+      const msg =
+        err && typeof err === "object" && "message" in err
+          ? (err as any).message
+          : "Please try again in a moment.";
       toast({
         title: "Could not post",
-        description: "Please try again in a moment.",
+        description: msg,
         variant: "destructive",
       });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const toggleSubscribeCat = (value: string) => {
+    setSubscribeCats((prev) =>
+      prev.includes(value) ? prev.filter((c) => c !== value) : [...prev, value]
+    );
+  };
+
+  const handleSubscribe = async () => {
+    if (!subscribeEmail.trim()) {
+      toast({
+        title: "Email required",
+        description: "Enter an email to get alerts.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const cats = subscribeCats.length > 0 ? subscribeCats : CATEGORIES;
+    setSubscribeSubmitting(true);
+    try {
+      const { error } = await supabase.from("opportunity_subscriptions").insert({
+        user_id: user?.id || null,
+        email: subscribeEmail.trim(),
+        categories: cats,
+      });
+      if (error) throw error;
+      toast({
+        title: "Subscribed",
+        description: "We'll email you when new opportunities are posted.",
+      });
+      localStorage.setItem("internships_subscribe_prompt_seen", "1");
+      setShowSubscribeModal(false);
+    } catch (err) {
+      console.error("Error subscribing", err);
+      // Graceful fallback: store locally so we don't block the user
+      const localSubsKey = "opportunity_subscriptions_local";
+      const existing = JSON.parse(localStorage.getItem(localSubsKey) || "[]");
+      const entry = {
+        email: subscribeEmail.trim(),
+        categories: cats,
+        created_at: new Date().toISOString(),
+      };
+      localStorage.setItem(localSubsKey, JSON.stringify([...existing, entry]));
+      localStorage.setItem("internships_subscribe_prompt_seen", "1");
+      setShowSubscribeModal(false);
+      toast({
+        title: "Subscribed locally",
+        description:
+          "We saved your preferences. If email fails, we'll still keep your choices.",
+      });
+    } finally {
+      setSubscribeSubmitting(false);
     }
   };
 
@@ -306,6 +396,69 @@ const Internships = () => {
           </Card>
         </div>
       </div>
+
+      {/* First-time subscription prompt */}
+      <Dialog open={showSubscribeModal} onOpenChange={setShowSubscribeModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Get email alerts for new opportunities</DialogTitle>
+            <DialogDescription>
+              Tell us where to reach you and what types you care about.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label htmlFor="sub-email">Email</Label>
+              <Input
+                id="sub-email"
+                value={subscribeEmail}
+                onChange={(e) => setSubscribeEmail(e.target.value)}
+                placeholder="you@example.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Categories</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {CATEGORIES.map((c) => (
+                  <label
+                    key={c}
+                    className="flex items-center gap-2 text-sm border rounded-md p-2 hover:bg-gray-50"
+                  >
+                    <Checkbox
+                      checked={subscribeCats.includes(c)}
+                      onCheckedChange={() => toggleSubscribeCat(c)}
+                    />
+                    {c}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                localStorage.setItem("internships_subscribe_prompt_seen", "1");
+                setShowSubscribeModal(false);
+              }}
+            >
+              Not now
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                localStorage.setItem("internships_subscribe_prompt_seen", "never");
+                setShowSubscribeModal(false);
+              }}
+            >
+              Don&apos;t ask again
+            </Button>
+            <Button onClick={handleSubscribe} disabled={subscribeSubmitting}>
+              {subscribeSubmitting ? "Subscribing..." : "Subscribe"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageLayout>
   );
 };
