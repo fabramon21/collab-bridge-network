@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Home } from "lucide-react";
+import { FooterNav } from "@/components/FooterNav";
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -29,8 +30,8 @@ export const PageLayout = ({
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">{title}</h1>
           {children}
           
@@ -74,6 +75,7 @@ export const PageLayout = ({
             </div>
           </div>
         </div>
+        <FooterNav />
       </div>
     </>
   );

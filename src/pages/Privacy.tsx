@@ -1,7 +1,10 @@
+import { FooterNav } from "@/components/FooterNav";
+
 const Privacy = () => {
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto bg-white shadow-sm rounded-lg p-6 space-y-4">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="flex-1 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto bg-white shadow-sm rounded-lg p-6 space-y-4">
         <h1 className="text-3xl font-bold text-gray-900">Privacy Policy</h1>
         <p className="text-sm text-gray-600">Last updated: {new Date().toLocaleDateString()}</p>
 
@@ -22,7 +25,9 @@ const Privacy = () => {
         <p className="text-gray-800">
           By using InternConnect, you consent to this policy. If you’re under 16, use the platform only with a parent/guardian’s consent.
         </p>
+        </div>
       </div>
+      <FooterNav />
     </div>
   );
 };

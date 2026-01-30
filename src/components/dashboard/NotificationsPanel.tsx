@@ -1,6 +1,7 @@
 
 import { Bell, Users, MessageCircle, Briefcase, Home, X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,6 +20,7 @@ export const NotificationsPanel = () => {
   const [loading, setLoading] = useState(true);
   const [notConfigured, setNotConfigured] = useState(false);
   const { user } = useAuth();
+  const navigate = useNavigate();
   // Default to enabled; only disable if explicitly set to "false"
   const notificationsEnabled =
     import.meta.env.VITE_ENABLE_NOTIFICATIONS !== "false";
@@ -117,6 +119,27 @@ export const NotificationsPanel = () => {
     }
   };
 
+  const notificationTarget = (type?: string) => {
+    switch (type) {
+      case "message":
+      case "housing_contact":
+        return "/messages";
+      case "connection_request":
+      case "connection_accepted":
+        return "/network";
+      case "internship":
+        return "/internships";
+      default:
+        return "/dashboard";
+    }
+  };
+
+  const handleNotificationClick = async (notification: Notification) => {
+    const target = notificationTarget(notification?.type);
+    await markAsRead(notification.id);
+    navigate(target);
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -170,7 +193,10 @@ export const NotificationsPanel = () => {
           notifications.map((notification) => (
             <div 
               key={notification.id}
-              className={`p-3 rounded-md ${notification.is_read ? 'bg-gray-50' : 'bg-blue-50 border-l-4 border-blue-500'}`}
+              className={`p-3 rounded-md cursor-pointer ${notification.is_read ? 'bg-gray-50' : 'bg-blue-50 border-l-4 border-blue-500'}`}
+              onClick={() => handleNotificationClick(notification)}
+              role="button"
+              tabIndex={0}
             >
               <div className="flex items-start gap-3">
                 <div className="mt-1">{getIcon(notification.type)}</div>

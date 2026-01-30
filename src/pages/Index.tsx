@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { FooterNav } from "@/components/FooterNav";
 
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
       <Hero />
       <Features />
@@ -49,6 +50,8 @@ const Index = () => {
           )}
         </div>
       </div>
+
+      <FooterNav />
     </div>
   );
 };

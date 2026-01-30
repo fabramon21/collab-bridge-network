@@ -28,6 +28,34 @@ export const Header = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  const notificationTarget = (type?: string) => {
+    switch (type) {
+      case "message":
+      case "housing_contact":
+        return "/messages";
+      case "connection_request":
+      case "connection_accepted":
+        return "/network";
+      case "internship":
+        return "/internships";
+      default:
+        return "/dashboard";
+    }
+  };
+
+  const handleNotificationClick = async (notification: any) => {
+    setNotifOpen(false);
+    const target = notificationTarget(notification?.type);
+    if (notification?.id) {
+      await supabase.from("notifications").update({ is_read: true }).eq("id", notification.id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notification.id ? { ...n, is_read: true } : n))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - (notification.is_read ? 0 : 1)));
+    }
+    navigate(target);
+  };
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
@@ -66,11 +94,13 @@ export const Header = () => {
       // mark all as read
       const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.id);
       if (unreadIds.length > 0) {
-        await supabase.from("notifications").update({ is_read: true }).in("id", unreadIds);
+        // optimistically clear badge to avoid flicker
         setUnreadCount(0);
         setNotifications((prev) =>
           prev.map((n) => (unreadIds.includes(n.id) ? { ...n, is_read: true } : n))
         );
+        // fire-and-forget mark read
+        supabase.from("notifications").update({ is_read: true }).in("id", unreadIds);
       }
     }
   };
@@ -110,49 +140,55 @@ export const Header = () => {
               <div className="relative" ref={notifRef}>
                 <Button variant="ghost" className="relative" onClick={openNotifications}>
                   <Bell className="h-5 w-5" />
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                    {unreadCount}
-                  </span>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                      {unreadCount}
+                    </span>
+                  )}
                 </Button>
                 {notifOpen && (
                   <div className="absolute right-0 mt-2 w-80 bg-white border rounded-md shadow-lg z-50">
                     <div className="p-3 border-b font-medium">Notifications</div>
                     <div className="p-3 space-y-2 max-h-64 overflow-y-auto">
-                      {notifError ? (
-                        <p className="text-sm text-gray-500">{notifError}</p>
-                      ) : notifications.length === 0 ? (
-                        <p className="text-sm text-gray-500">No notifications</p>
-                      ) : (
-                        notifications.map((n, idx) => (
-                          <div
-                            key={n.id}
-                            className={`text-sm border rounded p-2 flex items-start justify-between ${
-                              n.is_read ? "bg-gray-50" : "bg-blue-50"
-                            }`}
-                          >
-                            <div>
-                              <div className="font-medium">{n.content}</div>
-                              <div className="text-xs text-gray-500">
-                                {new Date(n.created_at).toLocaleString()}
-                              </div>
+                    {notifError ? (
+                      <p className="text-sm text-gray-500">{notifError}</p>
+                    ) : notifications.length === 0 ? (
+                      <p className="text-sm text-gray-500">No notifications</p>
+                    ) : (
+                      notifications.map((n, idx) => (
+                        <div
+                          key={n.id}
+                          className={`w-full text-left text-sm border rounded p-2 flex items-start justify-between cursor-pointer ${
+                            n.is_read ? "bg-gray-50" : "bg-blue-50"
+                          }`}
+                          onClick={() => handleNotificationClick(n)}
+                          role="button"
+                          tabIndex={0}
+                        >
+                          <div>
+                            <div className="font-medium">{n.content}</div>
+                            <div className="text-xs text-gray-500">
+                              {new Date(n.created_at).toLocaleString()}
                             </div>
-                            <button
-                              aria-label="Dismiss notification"
-                              className="text-gray-400 hover:text-gray-600 ml-2"
-                              onClick={() =>
-                                setNotifications((prev) =>
-                                  prev.filter((item: any) => item.id !== n.id)
-                                )
-                              }
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
                           </div>
-                        ))
-                      )}
-                    </div>
+                          <button
+                            aria-label="Dismiss notification"
+                            className="text-gray-400 hover:text-gray-600 ml-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setNotifications((prev) =>
+                                prev.filter((item: any) => item.id !== n.id)
+                              );
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))
+                    )}
                   </div>
-                )}
+                </div>
+              )}
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

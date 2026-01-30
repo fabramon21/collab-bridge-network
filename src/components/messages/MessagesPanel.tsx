@@ -156,7 +156,7 @@ export const MessagesPanel = () => {
         
         setMessages(data || []);
         
-        // Mark unread messages as read
+        // Mark unread messages as read (and mirror locally so badges clear immediately)
         const unreadMessageIds = data
           ?.filter(m => m.recipient_id === user.id && !m.is_read)
           .map(m => m.id);
@@ -166,6 +166,12 @@ export const MessagesPanel = () => {
             .from('messages')
             .update({ is_read: true })
             .in('id', unreadMessageIds);
+
+          setMessages((prev) =>
+            prev.map((msg) =>
+              unreadMessageIds.includes(msg.id) ? { ...msg, is_read: true } : msg
+            )
+          );
         }
       } catch (error) {
         console.error('Error fetching messages:', error);
@@ -268,6 +274,8 @@ export const MessagesPanel = () => {
                 const unreadCount = messages.filter(
                   m => m.sender_id === id && m.recipient_id === user?.id && !m.is_read
                 ).length;
+                // Hide flicker on the conversation you just opened
+                const displayUnread = selectedContact === id ? 0 : unreadCount;
                 
                 const initials = profile.full_name
                   .split(" ")
@@ -295,9 +303,9 @@ export const MessagesPanel = () => {
                     <div className="ml-3 flex-1">
                       <div className="flex justify-between items-center">
                         <span className="font-medium">{profile.full_name}</span>
-                        {unreadCount > 0 && (
+                        {displayUnread > 0 && (
                           <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                            {unreadCount}
+                            {displayUnread}
                           </span>
                         )}
                       </div>

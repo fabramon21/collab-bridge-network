@@ -14,6 +14,7 @@ import Discussions from "../pages/Discussions";
 import Internships from "../pages/Internships";
 import Terms from "../pages/Terms";
 import Privacy from "../pages/Privacy";
+import About from "../pages/About";
 
 
 const AppRoutes = () => {
@@ -24,6 +25,7 @@ const AppRoutes = () => {
       <Route path="/signup" element={<Signup />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
+      <Route path="/about" element={<About />} />
       <Route 
         path="/dashboard" 
         element={
