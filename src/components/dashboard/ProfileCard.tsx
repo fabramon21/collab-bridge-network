@@ -1,7 +1,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,13 +12,25 @@ export const ProfileCard = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || "",
-    university: profile?.university || "", // Changed from school to university
+    university: profile?.university || profile?.school || "",
     location: profile?.location || "",
     address: profile?.address || "",
     bio: profile?.bio || "",
-    linkedin_url: profile?.linkedin_url || "", // Changed from linkedin to linkedin_url
+    linkedin_url: profile?.linkedin_url || profile?.linkedin || "",
   });
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!profile || !isEditing) return;
+    setFormData({
+      full_name: profile.full_name || "",
+      university: profile.university || profile.school || "",
+      location: profile.location || "",
+      address: profile.address || "",
+      bio: profile.bio || "",
+      linkedin_url: profile.linkedin_url || profile.linkedin || "",
+    });
+  }, [profile, isEditing]);
 
   const initials = formData.full_name
     .split(" ")
