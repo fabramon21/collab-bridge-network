@@ -243,8 +243,9 @@ const Login = () => {
           </div>
         </div>
       </div>
-      <FooterNav />
     </div>
+    <FooterNav />
+  </div>
   );
 };
 
