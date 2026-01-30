@@ -81,10 +81,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) throw new Error('No user logged in');
 
     try {
-      await authService.updateProfile(user.id, profileData);
-      
-      // Update local profile state
-      setProfile(prev => prev ? { ...prev, ...profileData } : null);
+      const updatedProfile = await authService.updateProfile(user.id, profileData);
+      setProfile(updatedProfile);
       
       toast({
         title: "Profile updated",
