@@ -44,6 +44,13 @@ const SOURCES = [
       "https://raw.githubusercontent.com/summer2026internships/Summer2026-Internships/main/.github/scripts/listings.json",
     ],
   },
+  {
+    label: "Summer 2026 Internships (vanshb03)",
+    urls: [
+      "https://raw.githubusercontent.com/vanshb03/Summer2026-Internships/dev/.github/scripts/listings.json",
+      "https://raw.githubusercontent.com/vanshb03/Summer2026-Internships/main/.github/scripts/listings.json",
+    ],
+  },
 ];
 
 const CATEGORIES = [
@@ -58,6 +65,7 @@ const CATEGORIES = [
 ];
 
 const inferCategory = (title: string) => {
+  if (!title) return "Software Engineering";
   const t = title.toLowerCase();
   if (t.includes("data") || t.includes("machine learning") || t.includes("ml") || t.includes("ai"))
     return "AI, Data Science & Machine Learning";
@@ -111,12 +119,35 @@ export const CuratedInternships = () => {
 
         // Merge, dedupe by company+title+url, and sort newest first by source order
         const merged = results.flat();
+
+        // Drop outdated (2025) listings to keep the feed focused on 2026+
+        const without2025 = merged.filter((item) => {
+          const t = item.title?.toLowerCase() || "";
+          const season = (item as any).season?.toString().toLowerCase() || "";
+          const notes = (item.notes || "").toLowerCase();
+          const terms = (item.terms || []).join(" ").toLowerCase();
+          const url = (item.url || "").toLowerCase();
+          const has2025 =
+            t.includes("2025") ||
+            season.includes("2025") ||
+            notes.includes("2025") ||
+            terms.includes("2025") ||
+            url.includes("2025");
+          return !has2025;
+        });
+
         const seen = new Set<string>();
-        const unique = merged.filter((item) => {
+        const unique = without2025.filter((item) => {
           const key = `${item.company_name}|${item.title}|${item.url}`;
           if (seen.has(key)) return false;
           seen.add(key);
           return true;
+        });
+
+        const sorted = unique.sort((a, b) => {
+          const da = Number((a as any).date_updated || (a as any).date_posted || 0);
+          const db = Number((b as any).date_updated || (b as any).date_posted || 0);
+          return db - da;
         });
 
         if (unique.length === 0) {
@@ -135,7 +166,7 @@ export const CuratedInternships = () => {
             },
           ]);
         } else {
-          setListings(unique.slice(0, 50)); // keep it lean but balanced
+          setListings(sorted.slice(0, 100)); // show more to include newer feeds
         }
       } catch (err: any) {
         if (err.name === "AbortError") return;
