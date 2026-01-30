@@ -134,6 +134,9 @@ export const Header = () => {
               <Button variant="ghost" onClick={() => navigate("/network")}>
                 Network
               </Button>
+              <Button variant="ghost" onClick={() => navigate("/about")}>
+                About
+              </Button>
               <Button variant="ghost" onClick={() => navigate("/messages")}>
                 Messages
               </Button>
@@ -255,6 +258,16 @@ export const Header = () => {
                   variant="ghost" 
                   className="justify-start"
                   onClick={() => {
+                    navigate("/about");
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  About
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="justify-start"
+                  onClick={() => {
                     navigate("/messages");
                     setIsMenuOpen(false);
                   }}
@@ -274,6 +287,16 @@ export const Header = () => {
               </>
             ) : (
               <>
+                <Button 
+                  variant="ghost" 
+                  className="justify-start"
+                  onClick={() => {
+                    navigate("/about");
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  About
+                </Button>
                 <Button 
                   variant="ghost" 
                   className="justify-start"
