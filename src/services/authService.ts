@@ -1,6 +1,90 @@
 
 import { supabase } from "@/lib/supabase";
-import { Profile } from "@/types/auth.types";
+import {
+  Profile,
+  ProfileEducation,
+  ProfileExperience,
+  ProfileProject,
+} from "@/types/auth.types";
+
+const PROFILE_COLUMN_MAP: Record<string, string> = {
+  full_name: "full_name",
+  email: "email",
+  school: "school",
+  university: "school",
+  linkedin: "linkedin",
+  linkedin_url: "linkedin",
+  address: "address",
+  avatar_url: "avatar_url",
+  profile_image_url: "profile_image_url",
+  location: "location",
+  bio: "bio",
+  education: "education",
+  experience: "experience",
+  skills: "skills",
+  projects: "projects",
+};
+
+type DatabaseProfile = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  school: string | null;
+  linkedin: string | null;
+  address: string | null;
+  avatar_url: string | null;
+  profile_image_url: string | null;
+  location: string | null;
+  bio: string | null;
+  education: ProfileEducation[] | null;
+  experience: ProfileExperience[] | null;
+  skills: string[] | null;
+  projects: ProfileProject[] | null;
+  created_at: string;
+  updated_at: string;
+  [key: string]: any;
+};
+
+const mapProfileFromDb = (data: DatabaseProfile): Profile => ({
+  id: data.id,
+  full_name: data.full_name ?? null,
+  email: data.email ?? null,
+  school: data.school ?? null,
+  university: data.school ?? null,
+  linkedin: data.linkedin ?? null,
+  linkedin_url: data.linkedin ?? null,
+  address: data.address ?? null,
+  avatar_url: data.avatar_url ?? null,
+  profile_image_url: data.profile_image_url ?? null,
+  location: data.location ?? null,
+  bio: data.bio ?? null,
+  education: data.education ?? [],
+  experience: data.experience ?? [],
+  skills: data.skills ?? [],
+  projects: data.projects ?? [],
+  created_at: data.created_at,
+  updated_at: data.updated_at,
+});
+
+const mapProfileToDb = (profileData: Partial<Profile>) => {
+  const dbPayload: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(profileData)) {
+    if (value === undefined) continue;
+    const column = PROFILE_COLUMN_MAP[key];
+    if (!column) continue;
+    if (value === null) {
+      dbPayload[column] = null;
+      continue;
+    }
+    if (typeof value === "string") {
+      const normalized = value.trim();
+      dbPayload[column] = normalized.length ? normalized : null;
+      continue;
+    }
+    dbPayload[column] = value;
+  }
+  return dbPayload;
+};
 
 export const authService = {
   /**
@@ -59,38 +143,76 @@ export const authService = {
   /**
    * Fetch the user profile by ID
    */
-  fetchProfile: async (userId: string): Promise<Profile | null> => {
-    console.log('Auth service: fetching profile for user', userId);
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+  // fetchProfile: async (userId: string): Promise<Profile | null> => {
+  //   console.log('Auth service: fetching profile for user', userId);
+  //   try {
+  //     const { data, error } = await supabase
+  //       .from('profiles')
+  //       .select('*')
+  //       .eq('id', userId)
+  //       .single();
 
-      if (error) {
-        console.error('Error fetching profile:', error);
-        return null;
-      }
+  //     if (error) {
+  //       console.error('Error fetching profile:', error);
+  //       return null;
+  //     }
       
-      console.log('Auth service: profile fetched successfully', data);
-      return data as Profile;
-    } catch (error) {
-      console.error('Exception fetching profile:', error);
+  //     console.log('Auth service: profile fetched successfully', data);
+  //     return data as Profile;
+  //   } catch (error) {
+  //     console.error('Exception fetching profile:', error);
+  //     return null;
+  //   }
+  // },
+
+fetchProfile: async (userId: string): Promise<Profile | null> => {
+  console.log('Auth service: fetching profile for user', userId);
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching profile:', error);
       return null;
     }
-  },
 
-  /**
-   * Update user profile
-   */
+    const mapped = mapProfileFromDb(data as DatabaseProfile);
+    console.log('Auth service: profile fetched successfully', mapped);
+    return mapped;
+  } catch (error) {
+    console.error('Exception fetching profile:', error);
+    return null;
+  }
+},
+
+
   updateProfile: async (userId: string, profileData: Partial<Profile>) => {
-    console.log('Auth service: updating profile for user', userId);
-    const { error } = await supabase
+    const cleanData = mapProfileToDb(profileData);
+
+    if (!Object.keys(cleanData).length) {
+      console.warn('No valid profile fields provided for update', profileData);
+      const existing = await authService.fetchProfile(userId);
+      if (!existing) throw new Error('Unable to load profile for update');
+      return existing;
+    }
+
+    cleanData.updated_at = new Date().toISOString();
+
+    const { data, error } = await supabase
       .from('profiles')
-      .update(profileData)
-      .eq('id', userId);
-    
-    if (error) throw error;
+      .update(cleanData)
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating profile:', error, cleanData);
+      throw error;
+    }
+
+    return mapProfileFromDb(data as DatabaseProfile);
   },
 };
