@@ -1,6 +1,37 @@
 
 import { User } from '@supabase/supabase-js';
 
+export type ProfileEducation = {
+  id: string;
+  school: string;
+  degree?: string | null;
+  field?: string | null;
+  location?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  graduationDate?: string | null;
+  notes?: string | null;
+};
+
+export type ProfileExperience = {
+  id: string;
+  company: string;
+  role: string;
+  location?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  current?: boolean | null;
+  description?: string | null;
+};
+
+export type ProfileProject = {
+  id: string;
+  name: string;
+  description?: string | null;
+  link?: string | null;
+  technologies?: string[] | null;
+};
+
 export type Profile = {
   id: string;
   full_name: string | null;
@@ -14,6 +45,10 @@ export type Profile = {
   profile_image_url: string | null;
   location: string | null;
   bio: string | null;
+  education: ProfileEducation[] | null;
+  experience: ProfileExperience[] | null;
+  skills: string[] | null;
+  projects: ProfileProject[] | null;
   created_at: string;
   updated_at: string;
 };

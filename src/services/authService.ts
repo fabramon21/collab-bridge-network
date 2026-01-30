@@ -1,6 +1,11 @@
 
 import { supabase } from "@/lib/supabase";
-import { Profile } from "@/types/auth.types";
+import {
+  Profile,
+  ProfileEducation,
+  ProfileExperience,
+  ProfileProject,
+} from "@/types/auth.types";
 
 const PROFILE_COLUMN_MAP: Record<string, string> = {
   full_name: "full_name",
@@ -10,6 +15,14 @@ const PROFILE_COLUMN_MAP: Record<string, string> = {
   linkedin: "linkedin",
   linkedin_url: "linkedin",
   address: "address",
+  avatar_url: "avatar_url",
+  profile_image_url: "profile_image_url",
+  location: "location",
+  bio: "bio",
+  education: "education",
+  experience: "experience",
+  skills: "skills",
+  projects: "projects",
 };
 
 type DatabaseProfile = {
@@ -19,6 +32,14 @@ type DatabaseProfile = {
   school: string | null;
   linkedin: string | null;
   address: string | null;
+  avatar_url: string | null;
+  profile_image_url: string | null;
+  location: string | null;
+  bio: string | null;
+  education: ProfileEducation[] | null;
+  experience: ProfileExperience[] | null;
+  skills: string[] | null;
+  projects: ProfileProject[] | null;
   created_at: string;
   updated_at: string;
   [key: string]: any;
@@ -37,19 +58,30 @@ const mapProfileFromDb = (data: DatabaseProfile): Profile => ({
   profile_image_url: data.profile_image_url ?? null,
   location: data.location ?? null,
   bio: data.bio ?? null,
+  education: data.education ?? [],
+  experience: data.experience ?? [],
+  skills: data.skills ?? [],
+  projects: data.projects ?? [],
   created_at: data.created_at,
   updated_at: data.updated_at,
 });
 
 const mapProfileToDb = (profileData: Partial<Profile>) => {
-  const dbPayload: Record<string, string | null> = {};
+  const dbPayload: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(profileData)) {
     if (value === undefined) continue;
     const column = PROFILE_COLUMN_MAP[key];
     if (!column) continue;
-    const normalized = typeof value === 'string' ? value.trim() : value;
-    const finalValue = normalized === '' || normalized === undefined ? null : normalized;
-    dbPayload[column] = finalValue as string | null;
+    if (value === null) {
+      dbPayload[column] = null;
+      continue;
+    }
+    if (typeof value === "string") {
+      const normalized = value.trim();
+      dbPayload[column] = normalized.length ? normalized : null;
+      continue;
+    }
+    dbPayload[column] = value;
   }
   return dbPayload;
 };
