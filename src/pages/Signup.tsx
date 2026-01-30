@@ -24,6 +24,9 @@ const signupSchema = z.object({
   full_name: z.string().min(1),
   university: z.string().min(1),
   linkedin_url: z.string().url().optional(),
+  termsAccepted: z.literal(true, {
+    errorMap: () => ({ message: "You must accept the Terms & Conditions to create an account." }),
+  }),
 });
 
 type SignupValues = z.infer<typeof signupSchema>;
@@ -42,6 +45,7 @@ const Signup = () => {
       full_name: '',
       university: '',
       linkedin_url: '',
+      termsAccepted: false,
     },
   });
 
@@ -143,6 +147,23 @@ const Signup = () => {
               />
               {errors.linkedin_url && (
                 <p className="text-red-500 text-sm">{errors.linkedin_url.message}</p>
+              )}
+            </div>
+            <div className="pt-2">
+              <label className="flex items-start space-x-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  {...register('termsAccepted')}
+                />
+                <span>
+                  I agree that InternConnect is not responsible for scams, fraud, or any losses. I have read and accept the{" "}
+                  <a href="/terms" className="text-primary underline">Terms &amp; Conditions</a> and{" "}
+                  <a href="/privacy" className="text-primary underline">Privacy Policy</a>.
+                </span>
+              </label>
+              {errors.termsAccepted && (
+                <p className="text-red-500 text-sm mt-1">{errors.termsAccepted.message}</p>
               )}
             </div>
           </div>

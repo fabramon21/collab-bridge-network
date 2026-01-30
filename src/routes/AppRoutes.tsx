@@ -12,6 +12,8 @@ import Events from "../pages/Events";
 import HousingPage from "../pages/HousingPage";
 import Discussions from "../pages/Discussions";
 import Internships from "../pages/Internships";
+import Terms from "../pages/Terms";
+import Privacy from "../pages/Privacy";
 
 
 const AppRoutes = () => {
@@ -20,6 +22,8 @@ const AppRoutes = () => {
       <Route path="/" element={<Index />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/privacy" element={<Privacy />} />
       <Route 
         path="/dashboard" 
         element={
